@@ -8,13 +8,13 @@ Billy and Adrian
 
 Pages intended to provide functionalities
 -----------------------------------------
-- Main dashboard page (index.html) `[**Adrian**]`
-- Active order page (orders.html) `[**Billy**]`
-- Edit restaurant details page (editRest.html) `[**Adrian**]`
-- Food items page (foodItems.html) `[**Billy**]`
-- Menu Contents page (menu.html) `[**Adrian**]`
-- Order statistics page (stats.html) `[**Billy**]`
-- Ratings page (ratings.html) `[**Adrian**]`
+- Main dashboard page (index.html) `[Adrian]`
+- Active order page (orders.html) `[Billy]`
+- Edit restaurant details page (editRest.html) `[Adrian]`
+- Food items page (foodItems.html) `[Billy]`
+- Menu Contents page (menu.html) `[Adrian]`
+- Order statistics page (stats.html) `[Billy]`
+- Ratings page (ratings.html) `[Adrian]`
 
 Browser Support
 ---------------
