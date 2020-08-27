@@ -1,8 +1,8 @@
 ---
-name: Bug report for AdminLTE v3.x
-about: Create a report to help us improve AdminLTE v3.x
+name: Bug report for Foobar++ Web Dashboard Interface
+about: Create a report to help us improve Foobar++ Web Dashboard Interface
 title: "[BUG]"
-labels: type:bug, version:3.x
+labels: type:bug
 assignees: ''
 
 ---
