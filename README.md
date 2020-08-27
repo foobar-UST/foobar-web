@@ -4,20 +4,31 @@ This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill r
 
 Teammates In Charge
 -------------------
-Billy and Adrian
+Billy [@hhchanal](https://github.com/hhchanal) and Adrian [@LiquidHydroHK](https://github.com/LiquidHydroHK)
 
 Pages intended to provide functionalities
 -----------------------------------------
-- [x] Main dashboard page (index.html) @LiquidHydroHK
-- [ ] Active order page (orders.html) @hhchanal
-  - Notification table for webapp, make a table that stores information about active orders
-- [ ] Edit restaurant details page (editRest.html) @LiquidHydroHK
-- [ ] Food items page (foodItems.html) @hhchanal
-  - Using a table on the right (5 columns space) and a details table on the left (7 columns space)
-- [ ] Menu Contents page (menu.html) @LiquidHydroHK
-- [ ] Order statistics page (stats.html) @hhchanal
-  - ChartJS, Inline to do data representation
-- [ ] Ratings page (ratings.html) @LiquidHydroHK
+Completion | Current Status | Page name | Description | Person-in-charge
+---------- | -------------- | --------- | ----------- | ----------------
+:heavy_check_mark: | Finished, pending final edits | `index.html` | Main Dashboard Page | @LiquidHydroHK
+:x: | Not completed | `orders.html` | Active order page | @hhchanal
+:x: | Not completed | `editRest.html` | Edit restaurant details page | @LiquidHydroHK
+:x: | Not completed | `foodItems.html` | Food items page | @hhchanal
+:x: | Not completed | `menu.html` | Menu contents page | @LiquidHydroHK
+:x: | Not compelted | `stats.html` | Order statistics page | @hhchanal
+:x: | Not completed | `ratings.html` | Ratings page | @LiquidHydroHK
+
+Points to note for the following pages (updated on August 27th)
+---------------------------------------------------------------
+Page name | Remarks
+--------- | -------
+`index.html` | To be updated
+`orders.html` | Notification table for webapp, make a table that stores information about active orders
+`editRest.html` | To be updated
+`foodItems.html` | Using a table on the right (5 columns space) and a details table on the left (7 columns space)
+`menu.html` | To be updated
+`stats.html` | ChartJS, Inline to do data representation
+`ratings.html` | To be updated
 
 Browser Support
 ---------------
