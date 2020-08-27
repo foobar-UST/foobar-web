@@ -4,7 +4,7 @@ This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill r
 
 Current status
 --------------
-[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-14%-<COLOR>.svg)](https://https://github.com/foobar-UST/foobar-web/)
+[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-14%20percent-%3CCOLOR%3E.svg)](https://https://github.com/foobar-UST/foobar-web/)
 Teammates In Charge
 -------------------
 Billy [@hhchanal](https://github.com/hhchanal) and Adrian [@LiquidHydroHK](https://github.com/LiquidHydroHK)
