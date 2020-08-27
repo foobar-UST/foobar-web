@@ -8,16 +8,16 @@ Billy and Adrian
 
 Pages intended to provide functionalities
 -----------------------------------------
-- Main dashboard page (index.html) `[Adrian]`
-- Active order page (orders.html) `[Billy]`
+- [x] Main dashboard page (index.html) @LiquidHydroHK
+- [ ] Active order page (orders.html) @hhchanal
   - Notification table for webapp, make a table that stores information about active orders
-- Edit restaurant details page (editRest.html) `[Adrian]`
-- Food items page (foodItems.html) `[Billy]`
+- [ ] Edit restaurant details page (editRest.html) @LiquidHydroHK
+- [ ] Food items page (foodItems.html) @hhchanal
   - Using a table on the right (5 columns space) and a details table on the left (7 columns space)
-- Menu Contents page (menu.html) `[Adrian]`
-- Order statistics page (stats.html) `[Billy]`
+- [ ] Menu Contents page (menu.html) @LiquidHydroHK
+- [ ] Order statistics page (stats.html) @hhchanal
   - ChartJS, Inline to do data representation
-- Ratings page (ratings.html) `[Adrian]`
+- [ ] Ratings page (ratings.html) @LiquidHydroHK
 
 Browser Support
 ---------------
