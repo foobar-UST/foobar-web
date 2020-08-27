@@ -2,6 +2,9 @@ Introduction
 ============
 This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill requirements for CPEG 4901. This web dashboard will mainly provide the function to edit restaurant details and to manage orders from customers. The restaurants will be allowed to edit their menu content, add things into menu and also manage stock count for food items. The restaurants will be able to pick up orders from push notifications provided by the website.
 
+Current status
+--------------
+[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-14%-<COLOR>.svg)](https://https://github.com/foobar-UST/foobar-web/)
 Teammates In Charge
 -------------------
 Billy [@hhchanal](https://github.com/hhchanal) and Adrian [@LiquidHydroHK](https://github.com/LiquidHydroHK)
