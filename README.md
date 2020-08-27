@@ -53,5 +53,7 @@ reserves the right to change the license of future releases.
 Usage
 =====
 1. Clone the working directory to your workstation
-`git clone https://github.com/foobar-UST/foobar-web.git`
+```console
+git clone https://github.com/foobar-UST/foobar-web.git
+```
 2. Use any of your browsers to view the HTML pages.
