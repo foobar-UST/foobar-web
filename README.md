@@ -1,6 +1,6 @@
 Introduction
 ============
-This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill requirements for CPEG 4901. This web dashboard will mainly provide the function to edit restaurant details and to manage orders from customers. The restaurants will be allowed to edit their menu content, add things into menu and also manage stock count for food items. The restaurants will be able to pick up orders from push notifications provided by the website.
+This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill requirements for CPEG 4901. This web dashboard will mainly provide the function to edit restaurant details and to manage orders from customers. The restaurants will be allowed to edit their menu content, add things into menu and also manage stock count for food items. The restaurants will be able to pick up orders from push notifications provided by the website. As this is only a demonstration page, the implementation of the dynamic pages to view the update content has not been completed yet. This dashboard is meant to be used with Google Firestore under Google Firebase to display the dynamic contents.
 
 Current status
 --------------
@@ -49,3 +49,11 @@ License
 -------
 AdminLTE is an open source project by [AdminLTE.io](https://adminlte.io) that is licensed under [MIT](http://opensource.org/licenses/MIT). AdminLTE.io
 reserves the right to change the license of future releases.
+
+Usage
+=====
+1. Clone the working directory to your workstation
+```console
+git clone https://github.com/foobar-UST/foobar-web.git
+```
+2. Use any of your browsers to view the HTML pages.
