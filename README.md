@@ -4,7 +4,7 @@ This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill r
 
 Current status
 --------------
-[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-43%20percent-%3CCOLOR%3E.svg)](https://github.com/foobar-UST/foobar-web/)
+[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-57%20percent-%3CCOLOR%3E.svg)](https://github.com/foobar-UST/foobar-web/)
 [![GitHub commits](https://img.shields.io/github/commits-since/Naereen/StrapDown.js/v1.0.0.svg)](https://github.com/foobar-UST/foobar-web/commit/)
 [![GitHub issues](https://img.shields.io/github/issues/Naereen/StrapDown.js.svg)](https://github.com/foobar-UST/foobar-web/issues/)
 
@@ -22,7 +22,7 @@ Completion | Current Status | Page name | Description | Person-in-charge
 :heavy_check_mark: | Finished, pending sample data entries in table | `foodItems.html` | Food items page | @hhchanal
 :x: | Not completed | `menu.html` | Menu contents page | @LiquidHydroHK
 :x: | Not compelted | `stats.html` | Order statistics page | @hhchanal
-:x: | Not completed | `ratings.html` | Ratings page | @LiquidHydroHK
+:heavy_check_mark: | Finished | `ratings.html` | Ratings page | @LiquidHydroHK
 
 Points to note for the following pages (updated on August 30th)
 ---------------------------------------------------------------
