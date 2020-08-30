@@ -22,7 +22,7 @@ Completion | Current Status | Page name | Description | Person-in-charge
 :heavy_check_mark: | Finished, pending sample data entries in table | `foodItems.html` | Food items page | @hhchanal
 :x: | Not completed | `menu.html` | Menu contents page | @LiquidHydroHK
 :x: | Not compelted | `stats.html` | Order statistics page | @hhchanal
-:x: | Not completed | `ratings.html` | Ratings page | @LiquidHydroHK
+:heavy_check_mark: | Finished | `ratings.html` | Ratings page | @LiquidHydroHK
 
 Points to note for the following pages (updated on August 30th)
 ---------------------------------------------------------------
