@@ -4,7 +4,7 @@ This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill r
 
 Current status
 --------------
-[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-14%20percent-%3CCOLOR%3E.svg)](https://github.com/foobar-UST/foobar-web/)
+[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-43%20percent-%3CCOLOR%3E.svg)](https://github.com/foobar-UST/foobar-web/)
 [![GitHub commits](https://img.shields.io/github/commits-since/Naereen/StrapDown.js/v1.0.0.svg)](https://github.com/foobar-UST/foobar-web/commit/)
 [![GitHub issues](https://img.shields.io/github/issues/Naereen/StrapDown.js.svg)](https://github.com/foobar-UST/foobar-web/issues/)
 
@@ -18,19 +18,19 @@ Completion | Current Status | Page name | Description | Person-in-charge
 ---------- | -------------- | --------- | ----------- | ----------------
 :heavy_check_mark: | Finished, pending final edits | `index.html` | Main Dashboard Page | @LiquidHydroHK
 :x: | Not completed | `orders.html` | Active order page | @hhchanal
-:x: | Not completed | `editRest.html` | Edit restaurant details page | @LiquidHydroHK
-:x: | Not completed | `foodItems.html` | Food items page | @hhchanal
+:heavy_check_mark: | Finished | `editRest.html` | Edit restaurant details page | @LiquidHydroHK
+:heavy_check_mark: | Finished, pending sample data entries in table | `foodItems.html` | Food items page | @hhchanal
 :x: | Not completed | `menu.html` | Menu contents page | @LiquidHydroHK
 :x: | Not compelted | `stats.html` | Order statistics page | @hhchanal
 :x: | Not completed | `ratings.html` | Ratings page | @LiquidHydroHK
 
-Points to note for the following pages (updated on August 27th)
+Points to note for the following pages (updated on August 30th)
 ---------------------------------------------------------------
 Page name | Remarks
 --------- | -------
 `index.html` | To be updated
 `orders.html` | Notification table for webapp, make a table that stores information about active orders
-`editRest.html` | To be updated
+`editRest.html` | Add functions added, pending final discussion with teammates
 `foodItems.html` | Using a table on the right (5 columns space) and a details table on the left (7 columns space)
 `menu.html` | To be updated
 `stats.html` | ChartJS, Inline to do data representation
