@@ -19,9 +19,9 @@ Completion | Current Status | Page name | Description | Person-in-charge
 :heavy_check_mark: | Finished, pending final edits | `index.html` | Main Dashboard Page | @LiquidHydroHK
 :x: | Not completed | `orders.html` | Active order page | @hhchanal
 :heavy_check_mark: | Finished | `editRest.html` | Edit restaurant details page | @LiquidHydroHK
-:heavy_check_mark: | Finished, pending sample data entries in table | `foodItems.html` | Food items page | @hhchanal
+:heavy_check_mark: | Finished | `foodItems.html` | Food items page | @hhchanal
 :x: | Not completed | `menu.html` | Menu contents page | @LiquidHydroHK
-:x: | Not compelted | `stats.html` | Order statistics page | @hhchanal
+:heavy_check_mark: | Finished | `stats.html` | Order statistics page | @hhchanal
 :heavy_check_mark: | Finished | `ratings.html` | Ratings page | @LiquidHydroHK
 
 Points to note for the following pages (updated on August 30th)
