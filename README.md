@@ -4,7 +4,7 @@ This is the web dashboard design for Foobar++, a CPEG FYP (2020-21) to fulfill r
 
 Current status
 --------------
-[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-71%20percent-%3CCOLOR%3E.svg)](https://github.com/foobar-UST/foobar-web/)
+[![Generic badge](https://img.shields.io/badge/Finished%20Percentage-85.7%20percent-%3CCOLOR%3E.svg)](https://github.com/foobar-UST/foobar-web/)
 [![GitHub commits](https://img.shields.io/github/commits-since/Naereen/StrapDown.js/v1.0.0.svg)](https://github.com/foobar-UST/foobar-web/commit/)
 [![GitHub issues](https://img.shields.io/github/issues/Naereen/StrapDown.js.svg)](https://github.com/foobar-UST/foobar-web/issues/)
 
@@ -20,7 +20,7 @@ Completion | Current Status | Page name | Description | Person-in-charge
 :x: | Not completed | `orders.html` | Active order page | @hhchanal
 :heavy_check_mark: | Finished | `editRest.html` | Edit restaurant details page | @LiquidHydroHK
 :heavy_check_mark: | Finished | `foodItems.html` | Food items page | @hhchanal
-:x: | Not completed | `menu.html` | Menu contents page | @LiquidHydroHK
+:heavy_check_mark: | Finished | `menu.html` | Menu contents page | @LiquidHydroHK
 :heavy_check_mark: | Finished | `stats.html` | Order statistics page | @hhchanal
 :heavy_check_mark: | Finished | `ratings.html` | Ratings page | @LiquidHydroHK
 
