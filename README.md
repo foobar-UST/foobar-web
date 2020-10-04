@@ -16,8 +16,8 @@ Pages intended to provide functionalities
 -----------------------------------------
 Completion | Current Status | Page name | Description | Person-in-charge
 ---------- | -------------- | --------- | ----------- | ----------------
-:heavy_check_mark: | Finished, pending final edits | `index.html` | Main Dashboard Page | @LiquidHydroHK
-:x: | Not completed | `orders.html` | Active order page | @hhchanal
+:heavy_check_mark: | Finished | `index.html` | Main Dashboard Page | @LiquidHydroHK
+:x: | Finished | `orders.html` | Active order page | @hhchanal
 :heavy_check_mark: | Finished | `editRest.html` | Edit restaurant details page | @LiquidHydroHK
 :heavy_check_mark: | Finished | `foodItems.html` | Food items page | @hhchanal
 :heavy_check_mark: | Finished | `menu.html` | Menu contents page | @LiquidHydroHK
