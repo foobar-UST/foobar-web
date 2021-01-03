@@ -7,8 +7,7 @@
     <title>AdminLTE 3 | Log in</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <!-- jQuery -->
-    <script src="plugins/jquery/jquery.min.js"></script>
+
     <!-- Font Awesome -->
     <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
     <!-- Ionicons -->
@@ -44,68 +43,115 @@
         };
         // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
         firebase.analytics();
-    </script>
-
-    <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
-    <script type="text/javascript">
-        // FirebaseUI config.
-        var uiConfig = {
-            signInSuccessUrl: 'index.html',
-            signInOptions: [{
-                provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            }, {
-                provider: firebase.auth.PhoneAuthProvider.PROVIDER_ID,
-                // Invisible reCAPTCHA with image challenge and bottom left badge.
-                recaptchaParameters: {
-                    type: 'image',
-                    size: 'invisible',
-                    badge: 'bottomleft'
-                },
-                whitelistedCountries: ['+852']
-            }],
-            // tosUrl and privacyPolicyUrl accept either url string or a callback
-            // function.
-            // Terms of service url/callback.
-            tosUrl: '<your-tos-url>',
-            // Privacy policy url/callback.
-            privacyPolicyUrl: function() {
-                window.location.assign('<your-privacy-policy-url>');
-            }
-        };
-
-        // Initialize the FirebaseUI Widget using Firebase.
-        var ui = new firebaseui.auth.AuthUI(firebase.auth());
-        // The start method will wait until the DOM is loaded.
-        ui.start('#firebaseui-auth-container', uiConfig);
     </script>
 </head>
 
-<body id="mainContent" class="hold-transition login-page">
+<body class="hold-transition login-page">
     <div class="login-box">
         <div class="login-logo">
-            <a href="index2.html"><b>Foobar++</b></a>
+            <a>Foobar++</a>
             <p>Restaurant Dashboard</p>
         </div>
         <!-- /.login-logo -->
-
         <div class="card">
             <div class="card-body login-card-body">
                 <p class="login-box-msg">Sign in to start your session</p>
+                <div class="input-group mb-3">
+                    <input type="email" class="form-control" placeholder="Email" id="email_addr">
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-envelope"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="input-group mb-3">
+                    <input type="password" class="form-control" placeholder="Password" id="pwd">
+                    <div class="input-group-append">
+                        <div class="input-group-text">
+                            <span class="fas fa-lock"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col align-self-end">
+                        <p style="color: red; font-weight:normal; font-size: 15px;" id='errorPrompt'></p>
+                    </div>
+                </div>
+                <div class="row">
+                    <!-- /.col -->
 
-                <div id="firebaseui-auth-container"></div>
-                </p>
+                    <div class="col align-self-end">
+                        <button type="submit" class="btn btn-primary btn-block" onclick="signIn()" id="signInButton">Sign
+              In</button>
+                    </div>
+                    <!-- /.col -->
+                </div>
+
             </div>
             <!-- /.login-card-body -->
         </div>
     </div>
     <!-- /.login-box -->
-    <script src="js/app.js"></script>
+
+    <script>
+        function changeButtonState(state) {
+            if (state == "load") {
+                $("#signInButton").addClass("disabled");
+                document.getElementById('signInButton').innerHTML = "<div class='spinner-border spinner-border-sm' role='status'><span class='sr-only'>Loading...</span></div> Authenticating...";
+            } else if (state == "success") {
+                $("#signInButton").addClass("disabled");
+                document.getElementById('signInButton').innerHTML = "<div class='spinner-border spinner-border-sm' role='status'><span class='sr-only'>Loading...</span></div> Signing In...";
+            } else {
+                $("#signInButton").removeClass("disabled");
+                $("#signInButton").html("Sign In");
+            }
+        }
+
+        function checkUser(email) {
+            var user = firebase.auth().currentUser;
+            db.collection("users").get().then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    console.log(`${doc.id} => ${doc.data()}`);
+                });
+            });
+        }
+
+        function signIn() {
+            changeButtonState("load");
+            var getAuthEmail = document.getElementById('email_addr').value;
+            console.log(getAuthEmail);
+            var getAuthPwd = document.getElementById('pwd').value;
+            console.log(getAuthPwd);
+            checkUser(getAuthEmail);
+            firebase.auth().signInWithEmailAndPassword(getAuthEmail, getAuthPwd).then((user) => {
+                    // Signed in without problems
+                    changeButtonState("success");
+                    console.log('success');
+                    //window.location.replace('index.html');
+                })
+                .catch((error) => {
+                    changeButtonState("off");
+                    var errorCode = error.code;
+                    var errorMessage = error.message;
+                    console.log('errorCode: ' + errorCode)
+                    console.log('errorMsg: ' + errorMessage);
+                    /*
+                    document.getElementById('errorCode').innerText = errorCode;
+                    document.getElementById('errorPrompt').innerText = errorMessage;
+                    */
+                    document.getElementById('errorPrompt').innerText = "Invalid email or password.";
+                })
+        }
+    </script>
+    <!-- jQuery -->
+    <script src="plugins/jquery/jquery.min.js"></script>
     <!-- Bootstrap 4 -->
     <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
     <!-- AdminLTE App -->
     <script src="dist/js/adminlte.min.js"></script>
+
 </body>
 
 </html>
