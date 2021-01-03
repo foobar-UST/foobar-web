@@ -109,34 +109,39 @@
             }
         }
 
-        function checkUser(email) {
-            var user = firebase.auth().currentUser;
-            db.collection("users").get().then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    console.log(`${doc.id} => ${doc.data()}`);
-                });
-            });
-        }
-
         function signIn() {
             changeButtonState("load");
             var getAuthEmail = document.getElementById('email_addr').value;
-            console.log(getAuthEmail);
             var getAuthPwd = document.getElementById('pwd').value;
-            console.log(getAuthPwd);
-            checkUser(getAuthEmail);
             firebase.auth().signInWithEmailAndPassword(getAuthEmail, getAuthPwd).then((user) => {
                     // Signed in without problems
-                    changeButtonState("success");
-                    console.log('success');
-                    //window.location.replace('index.html');
+                    var user = firebase.auth().currentUser;
+                    var isManager = false;
+                    db.collection("users").doc(user.uid).get().then(function(doc) {
+                        //console.log(doc.data().roles);
+                        doc.data().roles.forEach(function(role) {
+                            if (role == "manager") {
+                                //console.log('isManager? ' + role);
+                                isManager = true;
+                            }
+                        });
+                        if (isManager) {
+                            changeButtonState("success");
+                            //console.log('success');
+                            window.location.replace('index.html');
+                        } else {
+                            changeButtonState("off");
+                            document.getElementById('errorPrompt').innerText = "Requested resource is not allowed.";
+                            firebase.auth().signOut();
+                        }
+                    });
                 })
                 .catch((error) => {
                     changeButtonState("off");
                     var errorCode = error.code;
                     var errorMessage = error.message;
-                    console.log('errorCode: ' + errorCode)
-                    console.log('errorMsg: ' + errorMessage);
+                    //console.log('errorCode: ' + errorCode)
+                    //console.log('errorMsg: ' + errorMessage);
                     /*
                     document.getElementById('errorCode').innerText = errorCode;
                     document.getElementById('errorPrompt').innerText = errorMessage;
