@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>AdminLTE 3 | Log in</title>
+    <title>Foobar++ | Login</title>
     <!-- Tell the browser to be responsive to screen width -->
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -84,11 +84,10 @@
 
                     <div class="col align-self-end">
                         <button type="submit" class="btn btn-primary btn-block" onclick="signIn()" id="signInButton">Sign
-              In</button>
+                            In</button>
                     </div>
                     <!-- /.col -->
                 </div>
-
             </div>
             <!-- /.login-card-body -->
         </div>
@@ -96,6 +95,10 @@
     <!-- /.login-box -->
 
     <script>
+        /**
+         * @param {string} state - "load"/"success"/anything else
+         */
+        // Changes the state of the button with regards to the state of login
         function changeButtonState(state) {
             if (state == "load") {
                 $("#signInButton").addClass("disabled");
@@ -108,7 +111,7 @@
                 $("#signInButton").html("Sign In");
             }
         }
-
+        // Main login function of this page, triggered on form submit
         function signIn() {
             changeButtonState("load");
             var getAuthEmail = document.getElementById('email_addr').value;
@@ -116,22 +119,21 @@
             firebase.auth().signInWithEmailAndPassword(getAuthEmail, getAuthPwd).then((user) => {
                     // Signed in without problems
                     var user = firebase.auth().currentUser;
-                    var isManager = false;
+                    var isSeller = false;
                     db.collection("users").doc(user.uid).get().then(function(doc) {
                         //console.log(doc.data().roles);
                         doc.data().roles.forEach(function(role) {
-                            if (role == "manager") {
+                            if (role == "seller") {
                                 //console.log('isManager? ' + role);
-                                isManager = true;
+                                isSeller = true;
                             }
                         });
-                        if (isManager) {
+                        if (isSeller) {
                             changeButtonState("success");
-                            //console.log('success');
                             window.location.replace('index.html');
                         } else {
                             changeButtonState("off");
-                            document.getElementById('errorPrompt').innerText = "Requested resource is not allowed.";
+                            document.getElementById('errorPrompt').innerText = "Requested resource is not available. Requested user is not a seller.";
                             firebase.auth().signOut();
                         }
                     });
@@ -140,15 +142,20 @@
                     changeButtonState("off");
                     var errorCode = error.code;
                     var errorMessage = error.message;
-                    //console.log('errorCode: ' + errorCode)
-                    //console.log('errorMsg: ' + errorMessage);
-                    /*
-                    document.getElementById('errorCode').innerText = errorCode;
-                    document.getElementById('errorPrompt').innerText = errorMessage;
-                    */
+                    // console.log() for debugging if needed
                     document.getElementById('errorPrompt').innerText = "Invalid email or password.";
                 })
         }
+
+        // Button is triggered if the blinking cursor is on password field and enter key is pressed
+        var getAuthPwd = document.getElementById("pwd");
+
+        getAuthPwd.addEventListener("keyup", function(event) {
+            if (event.keyCode === 13) {
+                event.preventDefault();
+                document.getElementById("signInButton").click();
+            }
+        });
     </script>
     <!-- jQuery -->
     <script src="plugins/jquery/jquery.min.js"></script>
