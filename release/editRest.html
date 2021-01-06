@@ -19,14 +19,8 @@
     <link rel="stylesheet" href="plugins/jqvmap/jqvmap.min.css">
     <!-- Theme style -->
     <link rel="stylesheet" href="dist/css/adminlte.css">
-    <!-- overlayScrollbars -->
-    <link rel="stylesheet" href="plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
-    <!-- Daterange picker -->
-    <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css">
-    <!-- summernote -->
-    <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css">
-    <link rel="stylesheet" href="plugins/select2/css/select2.min.css">
-    <link rel="stylesheet" href="plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- Bootstrap4 Duallistbox -->
+    <link rel="stylesheet" href="plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css">
     <!-- Google Font: Source Sans Pro -->
     <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
@@ -41,23 +35,7 @@
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
-    <script>
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        var firebaseConfig = {
-            apiKey: "AIzaSyAUe-NmpBDD3_Zs5di1brYXEmDO8J2yXbc",
-            authDomain: "foobar-group-delivery-app.firebaseapp.com",
-            databaseURL: "https://foobar-group-delivery-app.firebaseio.com",
-            projectId: "foobar-group-delivery-app",
-            storageBucket: "foobar-group-delivery-app.appspot.com",
-            messagingSenderId: "736111277135",
-            appId: "1:736111277135:web:88b9762a6a07d3d4bbe63a",
-            measurementId: "G-2TK10L2CB4"
-        };
-        // Initialize Firebase
-        firebase.initializeApp(firebaseConfig);
-        firebase.analytics();
-    </script>
+    <script src="js/firebase.config.js"></script>
     <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
     <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
     <style>
@@ -71,20 +49,37 @@
                 $('#loading_wrap').fadeOut();
             }, 2000);
         });
+        var doc_id = null;
         initApp = function() {
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
                     // User is signed in.
-                    var displayName = user.displayName;
-                    var email = user.email;
-                    var emailVerified = user.emailVerified;
-                    var photoURL = user.photoURL;
-                    var uid = user.uid;
-                    var phoneNumber = user.phoneNumber;
-                    var providerData = user.providerData;
-                    document.getElementById("emailAddrSideBar").innerText = email;
-                    document.getElementById("emailAddrTopNav").innerText = email;
-                    document.getElementById("restEmail").placeholder = email;
+                    $('.duallistbox').bootstrapDualListbox();
+                    document.getElementById("emailAddrSideBar").innerText = user.email;
+                    document.getElementById("emailAddrTopNav").innerText = user.email;
+                    document.getElementById("restEmail").placeholder = user.email;
+                    var db = firebase.firestore();
+                    db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                        queryResult.forEach(function(doc) {
+                            console.log('found!');
+                            doc_id = doc.id;
+                            document.getElementById('restNameEng').value = doc.data().name;
+                            document.getElementById('restNameChi').value = doc.data().name_zh;
+                            document.getElementById('engDesc').value = doc.data().description;
+                            document.getElementById('chiDesc').value = doc.data().description_zh;
+                            document.getElementById('restURL').value = doc.data().website;
+                            document.getElementById('phoneNum').value = doc.data().phone_num;
+                            document.getElementById('minSpend').value = doc.data().min_spend;
+                            if (doc.data().type == 1) {
+                                document.getElementById('restType').placeholder = "Off-campus";
+                            } else {
+                                document.getElementById('restType').placeholder = "On-campus";
+                            }
+                            document.getElementById('restNotice').value = doc.data().notice;
+                            document.getElementById('openHours').value = doc.data().opening_hours;
+                            document.getElementById('restImg').src = doc.data().image_url;
+                        })
+                    });
                 } else {
                     // User is signed out.
                     window.location.replace("login.html");
@@ -237,11 +232,6 @@
         }
         /* generated by https://loading.io/ */
     </style>
-    <script>
-        function updateConfig() {
-            console.log("Saving data.");
-        }
-    </script>
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
@@ -305,8 +295,8 @@
                     <input class="form-control form-control-navbar" type="search" placeholder="Search items" aria-label="Search">
                     <div class="input-group-append">
                         <button class="btn btn-navbar" type="submit">
-              <i class="fas fa-search"></i>
-            </button>
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -342,7 +332,7 @@
                     </div>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link" href="#">
+                    <a id="logout" class="nav-link" href="#">
                         <i class="fas fa-sign-out-alt mr-2"></i> Logout
                     </a>
             </ul>
@@ -467,7 +457,25 @@
                 <!-- /.container-fluid -->
             </div>
             <!-- /.content-header -->
-
+            <!-- Modal -->
+            <div class="modal fade" id="savedMsgBox" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal-dialog" role="document">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="exampleModalLabel">New Restaurant Details Saved</h5>
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                <span aria-hidden="true">&times;</span>
+                            </button>
+                        </div>
+                        <div class="modal-body">
+                            The new restaurant details have been saved.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload();">Close</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
@@ -478,63 +486,77 @@
                                     <h3 class="card-title">Restaurant Information</h3>
                                 </div>
                                 <div class="card-body">
-                                    <label>Restaurant Name:</label>
+                                    <label>Restaurant Type:</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control" data-mask id="restType" readonly>
+                                        </div>
+                                    </div>
+                                    <label>Restaurant Name (English):</label>
                                     <div class="form-group">
                                         <div class="input-group">
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text"><i class="fas fa-utensils"></i></span>
                                             </div>
-                                            <input type="text" class="form-control" data-mask>
+                                            <input type="text" class="form-control" data-mask id="restNameEng">
                                         </div>
                                     </div>
-                                    <div class="row">
-                                        <div class="col-sm-6">
-                                            <!-- time Picker -->
-                                            <div class="bootstrap-timepicker">
-                                                <div class="form-group">
-                                                    <label>Opening Time:</label>
-                                                    <div class="input-group date" id="timepicker" data-target-input="nearest">
-                                                        <input type="text" class="form-control datetimepicker-input" data-target="#timepicker" />
-                                                        <div class="input-group-append" data-target="#timepicker" data-toggle="datetimepicker">
-                                                            <div class="input-group-text"><i class="far fa-clock"></i></div>
-                                                        </div>
-                                                    </div>
-                                                    <!-- /.input group -->
-                                                </div>
-                                                <!-- /.form group -->
+                                    <label>Restaurant Name (Chinese) (Optional):</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-utensils"></i></span>
                                             </div>
+                                            <input type="text" class="form-control" data-mask id="restNameChi">
                                         </div>
-                                        <div class="col-sm-6">
-                                            <!-- time Picker -->
-                                            <div class="bootstrap-timepicker">
-                                                <div class="form-group">
-                                                    <label>Closing Time:</label>
-                                                    <div class="input-group date" id="timepicker" data-target-input="nearest">
-                                                        <input type="text" class="form-control datetimepicker-input" data-target="#timepicker" />
-                                                        <div class="input-group-append" data-target="#timepicker" data-toggle="datetimepicker">
-                                                            <div class="input-group-text"><i class="far fa-clock"></i></div>
-                                                        </div>
-                                                    </div>
-                                                    <!-- /.input group -->
-                                                </div>
-                                                <!-- /.form group -->
+                                    </div>
+                                    <label>Website (Optional):</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-utensils"></i></span>
                                             </div>
+                                            <input type="text" class="form-control" data-mask id="restURL">
                                         </div>
+                                    </div>
+                                    <label>Opening and Closing Time:</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" placeholder="e.g. Mon-Sun: 10:00 a.m. to 6:00 p.m." data-mask id="openHours">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Minimum Spending (HKD):</label>
+                                        <div class="input-group date" id="timepicker" data-target-input="nearest">
+                                            <input type="text" class="form-control" id="minSpend" />
+                                        </div>
+                                        <!-- /.input group -->
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Restaurant Notice (optional):</label>
+                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="restNotice"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Restaurant Description (English):</label>
+                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="engDesc"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Restaurant Description (Chinese):</label>
+                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="chiDesc"></textarea>
                                     </div>
                                     <div class="form-group">
                                         <label>Restaurant Category (can choose more than one):</label>
-                                        <select class="select2" multiple="multiple" data-placeholder="Select a restaurant category" style="width: 100%;">
-                      <option>Chinese</option>
-                      <option>Japanese</option>
-                      <option>Korean</option>
-                      <option>Indian</option>
-                      <option>American</option>
-                      <option>European</option>
-                    </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Restaurant Description:</label>
-                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;"></textarea>
+                                        <select class="duallistbox" multiple="multiple" id='restTags'>
+                                            <option>Chinese</option>
+                                            <option>Japanese</option>
+                                            <option>Korean</option>
+                                            <option>Indian</option>
+                                            <option>American</option>
+                                            <option>European</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -548,25 +570,12 @@
                                     <div class="row">
                                         <div class="col-sm-6">
                                             <div class="form-group">
-                                                <p><strong>Override Restaurant Status:</strong></p>
+                                                <p><strong>Save updated configuration?</strong></p>
                                             </div>
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="form-group">
-                                                <p><strong>Save current configuration?</strong></p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row align-items-center">
-                                        <div class="col-sm-6">
-                                            <div class="input-group">
-                                                <input type="checkbox" name="my-checkbox" checked data-bootstrap-switch data-off-color="danger" data-on-color="success">
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6">
-                                            <div class="input-group">
-                                                <button type="button" class="btn btn-success" onclick="updateConfig()"><i
-                            class="fas fa-save"></i> Save</button>
+                                                <button type="button" class="btn btn-success" onclick="updateConfig()"><i class="fas fa-save"></i> Save</button>
                                             </div>
                                         </div>
                                     </div>
@@ -587,22 +596,33 @@
                                         </div>
                                     </div>
                                     <div class="form-group">
+                                        <label>Phone number:</label>
+                                        <div class="input-group date" id="timepicker" data-target-input="nearest">
+                                            <input type="text" class="form-control" id="phoneNum" />
+                                            <div class="input-group-append" data-target="#timepicker" data-toggle="datetimepicker">
+                                                <div class="input-group-text"><i class="far fa-phone"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <!-- /.input group -->
+                                    </div>
+                                    <!-- /.form group -->
+                                    <div class="form-group">
                                         <label>Restaurant Image:</label>
+                                        <img id="restImg" class="img-fluid">
+                                    </div>
+                                    <div class="form-group">
                                         <div class="input-group">
                                             <div class="input-group-prepend">
-                                                <span class="input-group-text" id="inputGroupFileAddon01"><i class="fa fa-image"></i></span>
+                                                <span class="input-group-text" id="inputGroupFileAddon01"><i
+                                                        class="fa fa-image"></i></span>
                                             </div>
                                             <div class="custom-file">
                                                 <input type="file" class="custom-file-input" id="inputGroupFile01" aria-describedby="inputGroupFileAddon01">
-                                                <label class="custom-file-label" for="inputGroupFile01">Choose file</label>
+                                                <label class="custom-file-label" for="inputGroupFile01">Choose
+                                                    file</label>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Image preview:</label>
-                                    </div>
-                                    <div class="form-group">
-                                        <img src="https://image.shutterstock.com/image-photo/restaurant-chilling-out-classy-lifestyle-600w-507639565.jpg" class="img-fluid">
                                     </div>
                                 </div>
                             </div>
@@ -652,89 +672,52 @@
     <script src="dist/js/adminlte.min.js"></script>
     <!-- AdminLTE for demo purposes -->
     <script src="dist/js/demo.js"></script>
-    <script src="plugins/summernote/summernote-bs4.min.js"></script>
-    <script>
-        $(function() {
-            // Summernote
-            $('.textarea').summernote()
-        })
-    </script>
     <!-- Page script -->
+
     <script>
-        $(function() {
-            //Initialize Select2 Elements
-            $('.select2').select2()
-
-            //Initialize Select2 Elements
-            $('.select2bs4').select2({
-                theme: 'bootstrap4'
+        function updateConfig() {
+            var db = firebase.firestore();
+            var user = firebase.auth().currentUser;
+            var _restNameEng = $('#restNameEng').val();
+            var _restNameChi = $('#restNameChi').val();
+            var _engDesc = $('#engDesc').val();
+            var _chiDesc = $('#chiDesc').val();
+            var _restURL = $('#restURL').val();
+            var _phone = $('#phoneNum').val();
+            // Need Google Maps SDK
+            var _location = null;
+            var _minSpend = $('#minSpend').val();
+            var _openHours = $('#openHours').val();
+            var _tags = $('#restTags').val();
+            var sellerDoc = {
+                name: _restNameEng,
+                name_zh: _restNameChi,
+                description: _engDesc,
+                description_zh: _chiDesc,
+                website: _restURL,
+                phone_num: _phone,
+                location: null,
+                min_spend: _minSpend,
+                online: false,
+                notice: null,
+                opening_hours: _openHours,
+                tags: _tags,
+            }
+            db.collection("sellers").doc(doc_id).update(sellerDoc).then(function() {
+                    $('#savedMsgBox').modal('show');
+                })
+                .catch(function(error) {
+                    console.error("Error updating seller record: ", error);
+                });
+        }
+    </script>
+    <script>
+        var logoutBtn = document.getElementById('logout');
+        logoutBtn.onclick = function() {
+            firebase.auth().signOut().then(function() {
+                window.location.replace("login.html");
             })
-
-            //Datemask dd/mm/yyyy
-            $('#datemask').inputmask('dd/mm/yyyy', {
-                    'placeholder': 'dd/mm/yyyy'
-                })
-                //Datemask2 mm/dd/yyyy
-            $('#datemask2').inputmask('mm/dd/yyyy', {
-                    'placeholder': 'mm/dd/yyyy'
-                })
-                //Money Euro
-            $('[data-mask]').inputmask()
-
-            //Date range picker
-            $('#reservationdate').datetimepicker({
-                format: 'L'
-            });
-            //Date range picker
-            $('#reservation').daterangepicker()
-                //Date range picker with time picker
-            $('#reservationtime').daterangepicker({
-                    timePicker: true,
-                    timePickerIncrement: 30,
-                    locale: {
-                        format: 'MM/DD/YYYY hh:mm A'
-                    }
-                })
-                //Date range as a button
-            $('#daterange-btn').daterangepicker({
-                    ranges: {
-                        'Today': [moment(), moment()],
-                        'Yesterday': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                        'Last 7 Days': [moment().subtract(6, 'days'), moment()],
-                        'Last 30 Days': [moment().subtract(29, 'days'), moment()],
-                        'This Month': [moment().startOf('month'), moment().endOf('month')],
-                        'Last Month': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-                    },
-                    startDate: moment().subtract(29, 'days'),
-                    endDate: moment()
-                },
-                function(start, end) {
-                    $('#reportrange span').html(start.format('MMMM D, YYYY') + ' - ' + end.format('MMMM D, YYYY'))
-                }
-            )
-
-            //Timepicker
-            $('#timepicker').datetimepicker({
-                format: 'LT'
-            })
-
-            //Bootstrap Duallistbox
-            $('.duallistbox').bootstrapDualListbox()
-
-            //Colorpicker
-            $('.my-colorpicker1').colorpicker()
-                //color picker with addon
-            $('.my-colorpicker2').colorpicker()
-
-            $('.my-colorpicker2').on('colorpickerChange', function(event) {
-                $('.my-colorpicker2 .fa-square').css('color', event.color.toString());
-            });
-
-            $("input[data-bootstrap-switch]").each(function() {
-                $(this).bootstrapSwitch('state', $(this).prop('checked'));
-            });
-
-        })
+        }
     </script>
 </body>
 
