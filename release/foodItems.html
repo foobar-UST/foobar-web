@@ -244,14 +244,12 @@
       function changeDetailPage (foodItemId) {
         let currentUser = window.sellerInfo;
         //let details = document.getElementById("details-table");
-        console.log(foodItemId);
         db.collection("sellers").doc(currentUser.obj.id).collection("items").doc(foodItemId)
         .get()
         .then(function(querySnapshot) {
           if (querySnapshot.empty) { console.log("NO DATA"); }
           else {
             let currentItem = querySnapshot.data();
-            //console.log(currentItem);
 
             let cellImg = document.getElementById("details-img")
             cellImg.src = currentItem.image_url 
@@ -399,7 +397,7 @@
           <img src="dist/img/can.teen.jpg" class="img-circle elevation-2" alt="User Image">
         </div>
         <div class="info">
-          <a id="emailAddrSideBar" href="#" class="d-block"></a>
+          <a id="emailAddrSideBar" class="d-block"></a>
         </div>
       </div>
 
@@ -413,6 +411,14 @@
               <i class="nav-icon fas fa-tachometer-alt"></i>
               <p>
                 Dashboard
+              </p>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link">
+              <i class="nav-icon fas fa-map-marker-alt"></i>
+              <p>
+                Online
               </p>
             </a>
           </li>
@@ -524,6 +530,10 @@
                           <label for="exampleInputEmail1">Name</label>
                           <input type="email" class="form-control" id="exampleInputEmail1">
                         </div>
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">Name (CH)</label>
+                          <input type="email" class="form-control" id="exampleInputEmail1">
+                        </div>
                         <label for="exampleInputEmail2">Price</label>
                         <div class="form-group">
                           <div class="input-group">
@@ -538,6 +548,22 @@
                         <div class="form-group">
                           <label for="exampleInputEmail1">Stock</label>
                           <input type="email" class="form-control" id="exampleInputEmail3">
+                        </div>
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">Catagory</label>
+                          <input type="email" class="form-control" id="exampleInputEmail1">
+                        </div>
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">Availibility</label>
+                          <input type="email" class="form-control" id="exampleInputEmail1">
+                        </div>
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">Description</label>
+                          <input type="email" class="form-control" id="exampleInputEmail1">
+                        </div>
+                        <div class="form-group">
+                          <label for="exampleInputEmail1">Description (CH)</label>
+                          <input type="email" class="form-control" id="exampleInputEmail1">
                         </div>
                         <div class="form-group">
                           <label for="exampleInputFile">Image</label>
