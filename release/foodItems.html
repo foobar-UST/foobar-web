@@ -107,26 +107,19 @@
       let catalog_list = {};
       let selected = null;
 
-      function initDataTable () {
+      function findTableItems (catalog) {
         let currentUser = window.sellerInfo;
         let datatable = document.getElementById("main-datatable");
-        db.collection("sellers").doc(currentUser.obj.id).collection("catalogs")
-        .get()
-        .then(function(querySnapshot) {
-          if (querySnapshot.empty) { console.log("NO DATA"); }
-          else {
-            querySnapshot.forEach( function(doc) {
-              let currentCat = doc.data();
-              catalog_list[currentCat.id] = [currentCat.title, currentCat.title_zh];
-            });              
-          }
-        })
-        .catch(function(error) {
-            console.log("Error getting documents: ", error);
-        });
-        db.collection("sellers").doc(currentUser.obj.id).collection("items")
-        .get()
-        .then(function(querySnapshot) {
+        datatable.innerHTML = "";
+        let docRef;
+        if (catalog !== 'all' && catalog_list[catalog] !== undefined) {
+          docRef = db.collection("sellers").doc(currentUser.obj.id).collection("items").where("catalog_id","==",catalog);
+          let tableCatDropdown = document.getElementById("table-cat");
+          tableCatDropdown.value = catalog;
+        } else {
+          docRef = db.collection("sellers").doc(currentUser.obj.id).collection("items")
+        }
+        docRef.get().then(function(querySnapshot) {
           if (querySnapshot.empty) { console.log("NO DATA"); }
           else {
             querySnapshot.forEach( function(doc) {
@@ -190,9 +183,44 @@
         });
       }
 
+      function initDataTable () {
+        let currentUser = window.sellerInfo;
+        db.collection("sellers").doc(currentUser.obj.id).collection("catalogs")
+        .get()
+        .then(function(querySnapshot) {
+          if (querySnapshot.empty) { console.log("NO DATA"); }
+          else {
+            let catDropdown = document.getElementById("update-cat");
+            let tableCatDropdown = document.getElementById("table-cat");
+
+            let catOption = document.createElement("option");
+            catOption.value = "all";
+            catOption.innerHTML = "All";
+            tableCatDropdown.appendChild(catOption);
+            tableCatDropdown.value = "all";
+
+            querySnapshot.forEach( function(doc) {
+              let currentCat = doc.data();
+              catalog_list[currentCat.id] = [currentCat.title, currentCat.title_zh];
+
+              let catOption = document.createElement("option");
+              catOption.value = currentCat.id;
+              catOption.innerHTML = currentCat.title + " || " + currentCat.title_zh;
+
+              let catClone = catOption.cloneNode(true);
+
+              tableCatDropdown.appendChild(catOption);
+              catDropdown.appendChild(catClone);
+            });
+          }
+        })
+        .catch(function(error) {
+            console.log("Error getting documents: ", error);
+        });
+      }
+
       function initDetailPage () {
         let currentUser = window.sellerInfo;
-        //let details = document.getElementById("details-table");
         db.collection("sellers").doc(currentUser.obj.id).collection("items")
         .limit(1)
         .get()
@@ -221,6 +249,9 @@
 
               let cellCount = document.getElementById("details-stock");
               cellCount.innerHTML = currentItem.count;
+
+              let catSelection = document.getElementById("update-cat");
+              catSelection.value = currentItem.catalog_id;
 
               let cellCatalogENG = document.getElementById("details-cat");
               cellCatalogENG.innerHTML = catalog_list[currentItem.catalog_id][0] || "";
@@ -270,6 +301,9 @@
             let cellCount = document.getElementById("details-stock");
             cellCount.innerHTML = currentItem.count;
 
+            let catSelection = document.getElementById("update-cat");
+            catSelection.value = currentItem.catalog_id;
+
             let cellCatalogENG = document.getElementById("details-cat");
             cellCatalogENG.innerHTML = catalog_list[currentItem.catalog_id][0] || "";
 
@@ -288,8 +322,97 @@
         })
       }
 
+      function triggerTableFilter() {
+        let filterInfo = document.getElementById('table-cat').value;
+        if (filterInfo == 'all' || catalog_list[filterInfo] !== undefined ) {
+          findTableItems(filterInfo);
+        }
+      }
+
+      function addItem () {
+        let currentUser = window.sellerInfo;
+        let itemCat = document.getElementById('update-cat').value;
+        let itemAvail = document.getElementById('update-avail').checked;
+        let checker = {
+          title: $("#update-name").val(),
+          title_zh: $("#update-name-ch").val(),
+          description: $("#update-descrip").val(),
+          description_zh: $("#update-descrip-ch").val(),
+          price: $("#update-price").val(),
+          count: $("#update-count").val(),
+          catalog_id: itemCat,
+          available: itemAvail,
+          updated_at: new Date().getTime(),
+        }
+
+        let errorText = document.getElementById("addItemError");
+        for (element of Object.keys(checker)) {
+          if (checker[element] == "") {
+            if (element == "description" || element == "description_zh") {
+              continue;
+            }
+            errorText.style.display = "block";
+            return;
+          }
+        }
+        errorText.style.display = "none";
+
+        db.collection("sellers").doc(currentUser.obj.id).collection("items")
+        .add(checker).then( function (docRef) {
+          db.collection("sellers").doc(currentUser.obj.id).collection("items").doc(docRef.id).update({
+            id: docRef.id
+          }).then(function() {
+            findTableItems(itemCat);
+            changeDetailPage(docRef.id);
+          })
+          .catch(function(error) {
+              console.error("Error updating food item record: ", error);
+          });
+        })
+        .catch(function(error) {
+            console.error("Error adding food item record: ", error);
+        });
+      }
+
+      function editItem () {
+        let currentUser = window.sellerInfo;
+        let itemId = document.getElementById('details-id').innerHTML;
+        let itemCat = document.getElementById('update-cat').value;
+        let itemAvail = document.getElementById('update-avail').checked;
+        let checker = {
+          title: $("#update-name").val(),
+          title_zh: $("#update-name-ch").val(),
+          description: $("#update-descrip").val(),
+          description_zh: $("#update-descrip-ch").val(),
+          price: $("#update-price").val(),
+          count: $("#update-count").val(),
+          catalog_id: itemCat,
+          available: itemAvail,
+          updated_at: new Date().getTime(),
+        }
+        let itemObj = {}
+        Object.keys(checker).forEach( function (element) {
+          if (element == "description" || element == "description_zh") {
+            if (checker[element] == "") {
+              itemObj[element] == null;
+            }
+          } else if (checker[element] !== "") {
+            itemObj[element] = checker[element];  
+          }
+        });
+        db.collection("sellers").doc(currentUser.obj.id).collection("items")
+        .doc(itemId).update(itemObj).then(function() {
+          findTableItems(itemCat);
+          changeDetailPage(itemId);
+        })
+        .catch(function(error) {
+            console.error("Error updating food item record: ", error);
+        });
+      }
+
       function initPage () {
         initDataTable();
+        findTableItems('all');
         initDetailPage();
       }
 
@@ -514,7 +637,7 @@
               <div class="card-header">
                 <h3 class="card-title">Detail</h3>
                 <div class="card-tools">
-                  <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#exampleModal">Edit</button>
+                  <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#exampleModal">Edit / Add</button>
                   <!-- Modal -->
                 <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="modal-dialog" role="document">
@@ -527,12 +650,12 @@
                       </div>
                       <div class="modal-body">
                         <div class="form-group">
-                          <label for="exampleInputEmail1">Name</label>
-                          <input type="email" class="form-control" id="exampleInputEmail1">
+                          <label for="update-name">Name</label>
+                          <input type="text" class="form-control" id="update-name">
                         </div>
                         <div class="form-group">
-                          <label for="exampleInputEmail1">Name (CH)</label>
-                          <input type="email" class="form-control" id="exampleInputEmail1">
+                          <label for="update-name-ch">Name (CH)</label>
+                          <input type="text" class="form-control" id="update-name-ch">
                         </div>
                         <label for="exampleInputEmail2">Price</label>
                         <div class="form-group">
@@ -542,45 +665,46 @@
                                 <i class="fas fa-dollar-sign"></i>
                               </span>
                             </div>
-                            <input type="text" class="form-control">
+                            <input type="number" class="form-control" id="update-price">
                           </div>
                         </div>
                         <div class="form-group">
-                          <label for="exampleInputEmail1">Stock</label>
-                          <input type="email" class="form-control" id="exampleInputEmail3">
+                          <label for="update-count">Stock</label>
+                          <input type="number" class="form-control" id="update-count">
                         </div>
                         <div class="form-group">
                           <label for="exampleInputEmail1">Catagory</label>
-                          <input type="email" class="form-control" id="exampleInputEmail1">
+                          <select class="form-control" name="Catagory" id="update-cat"></select>
                         </div>
                         <div class="form-group">
-                          <label for="exampleInputEmail1">Availibility</label>
-                          <input type="email" class="form-control" id="exampleInputEmail1">
+                          <label for="update-avail">Availibility</label>
+                          <input type="checkbox" class="form-control" id="update-avail">
                         </div>
                         <div class="form-group">
-                          <label for="exampleInputEmail1">Description</label>
-                          <input type="email" class="form-control" id="exampleInputEmail1">
+                          <label for="update-descrip">Description</label>
+                          <input type="email" class="form-control" id="update-descrip">
                         </div>
                         <div class="form-group">
-                          <label for="exampleInputEmail1">Description (CH)</label>
-                          <input type="email" class="form-control" id="exampleInputEmail1">
+                          <label for="update-descrip-ch">Description (CH)</label>
+                          <input type="email" class="form-control" id="update-descrip-ch">
                         </div>
                         <div class="form-group">
                           <label for="exampleInputFile">Image</label>
                           <div class="input-group">
                             <div class="custom-file">
-                              <input type="file" class="custom-file-input" id="exampleInputFile">
-                              <label class="custom-file-label" for="exampleInputFile">Choose file</label>
+                              <input type="file" accept="image/*" class="custom-file-input" id="update-image">
+                              <label class="custom-file-label" for="update-image">Choose file</label>
                             </div>
-                            <div class="input-group-append">
-                              <span class="input-group-text" id="">Upload</span>
-                          </div>
                           </div>
                         </div>
                       </div>
+                      <div class="form-group">
+                          <label id="addItemError" style="color: red; display: none;">You Should Fill in All the Blanks !!</label>
+                      </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-primary" data-dismiss="modal">Save changes</button>
+                        <button type="button" class="btn btn-success" data-dismiss="modal" onclick="addItem()">Save As New Item</button>
+                        <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="editItem()">Edit Current Item</button>
                       </div>
                     </div>
                   </div>
@@ -649,12 +773,14 @@
             <div class="card-header">
               <h3 class="card-title">Items</h3>
               <div class="card-tools">
-                <div class="input-group input-group-sm" style="width: 150px;">
-                  <input type="text" name="table_search" class="form-control float-right" placeholder="Search">
-                  <div class="input-group-append">
-                    <button type="submit" class="btn btn-default"><i class="fas fa-search"></i></button>
+                <div class="form-group">
+                  <div class="input-group">
+                  <select class="form-control" name="table_cat" id="table-cat"></select>
+                  <div class="input-group-prepend">
+                    <button type="submit" class="btn btn-default" onclick="triggerTableFilter()"><i class="fas fa-search"></i></button>
                   </div>
                 </div>
+              </div>
               </div>
             </div>
             <!-- /.card-header -->
@@ -675,6 +801,7 @@
                 <tbody id="main-datatable"></tbody>
                 <tfoot></tfoot>
                 </table>
+                <!--
                 <nav aria-label="Page navigation example">
                   <ul class="pagination">
                     <li class="page-item"><a class="page-link" href="#">Previous</a></li>
@@ -684,6 +811,7 @@
                     <li class="page-item"><a class="page-link" href="#">Next</a></li>
                   </ul>
                 </nav>
+              -->
             </div>
             </div>
             <!-- /.card-body -->
@@ -757,3 +885,4 @@
 <script src="dist/js/demo.js"></script>
 </body>
 </html>
+

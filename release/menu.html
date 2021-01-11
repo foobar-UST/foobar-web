@@ -238,7 +238,6 @@
         errorText.style.display = "block";
       } else {
         db.collection("sellers").doc(currentUser.obj.id).collection("catalogs").add(catObj).then(function(docRef) {
-          catObj.id = docRef.id;
           db.collection("sellers").doc(currentUser.obj.id).collection("catalogs").doc(docRef.id).update({
             id: docRef.id
           }).then(function() {
