@@ -109,8 +109,8 @@
 
     function initCatList () {
       let currentUser = window.sellerInfo;
-      let datatable = document.getElementById("main-datatable");
       let catTable = document.getElementById("cat-list");
+      catTable.innerHTML = "";
       db.collection("sellers").doc(currentUser.obj.id).collection("catalogs")
       .get()
       .then(function(querySnapshot) {
@@ -122,8 +122,8 @@
             let newRow = catTable.insertRow();
             newRow.id = currentCat.id
 
-            let cellId = newRow.insertCell();
-            cellId.innerHTML = currentCat.id;
+            //let cellId = newRow.insertCell();
+            //cellId.innerHTML = currentCat.id;
 
             let cellTitleENG = newRow.insertCell();
             cellTitleENG.innerHTML = currentCat.title;
@@ -131,22 +131,74 @@
             let cellTitleCH = newRow.insertCell();
             cellTitleCH.innerHTML = currentCat.title_zh;
           });
+          initFoodItemBox();
         }
       })
       .catch(function(error) {
           console.log("Error getting documents: ", error);
       });
-      /*
-      db.collection("sellers").doc(currentUser.obj.id).collection("items")
-      .get()
-      .then(function(querySnapshot) {
-        if (querySnapshot.empty) { console.log("NO DATA"); }
-        else {
-          querySnapshot.forEach( function(doc) {
-            let currentItem = doc.data();
-            //console.log(currentItem);
-            let newRow = datatable.insertRow();
-            newRow.id = currentItem.id;
+    }
+
+    function initFoodItemBox () {
+      let currentUser = window.sellerInfo;
+      let catFoodTable = document.getElementById("cat-food-table");
+      catFoodTable.innerHTML = 
+      `
+      <div class="card-footer">
+        To change the category of the food items, please visit the <a href="foodItems.html">Food Items</a> page to edit the food item.
+      </div>
+      `;
+      let catalog_arr = Object.keys(catalog_list);
+      catalog_arr.forEach( async function(element) {
+        let newHeader = document.createElement('div');
+        newHeader.className  = "form-group";
+        newHeader.innerHTML = "<p><strong>" + catalog_list[element][0] + " || " + catalog_list[element][1] + "</strong></p>";
+
+        let newItemTableCard = document.createElement('div');
+        newItemTableCard.className  = "form-group";
+
+        let newItemTable = document.createElement('table');
+        newItemTable.className  = "table table-striped table-sm";
+
+        let newTableHeader = newItemTable.createTHead();
+        let newTableHeaderRow = newTableHeader.insertRow();
+
+        let newTableHeaderRowTH1 = document.createElement('th');
+        newTableHeaderRowTH1.style.width = '40%';
+        newTableHeaderRowTH1.innerText = 'Name';
+        newTableHeaderRow.appendChild(newTableHeaderRowTH1)
+
+        let newTableHeaderRowTH2 = document.createElement('th');
+        newTableHeaderRowTH2.style.width = '40%';
+        newTableHeaderRow.appendChild(newTableHeaderRowTH2)
+
+        let newTableHeaderRowTH3 = document.createElement('th');
+        newTableHeaderRowTH3.style.width = '10%';
+        newTableHeaderRowTH3.innerText = 'Price';
+        newTableHeaderRow.appendChild(newTableHeaderRowTH3)
+
+        let newTableHeaderRowTH4 = document.createElement('th');
+        newTableHeaderRowTH4.style.width = '10%';
+        newTableHeaderRowTH4.innerText = 'Stock';
+        newTableHeaderRow.appendChild(newTableHeaderRowTH4)
+
+        let newTableBody = document.createElement("TBODY");
+
+        await db.collection("sellers").doc(currentUser.obj.id).collection("items").where("catalog_id", "==", element)
+        .get()
+        .then(function(querySnapshot) {
+          if (querySnapshot.size == 0) {
+            let newRow = newTableBody.insertRow()
+            let cellNoItem = newRow.insertCell();
+            cellNoItem.innerHTML = "No Food Item";
+            newRow.insertCell();
+            newRow.insertCell();
+            newRow.insertCell();
+          }
+          querySnapshot.forEach(function(doc) {
+            let currentItem = doc.data()
+
+            let newRow = newTableBody.insertRow()
 
             let cellTitleENG = newRow.insertCell();
             cellTitleENG.innerHTML = currentItem.title;
@@ -160,21 +212,49 @@
             let cellCount = newRow.insertCell();
             cellCount.innerHTML = currentItem.count;
 
-            let cellCatalogENG = newRow.insertCell();
-            cellCatalogENG.innerHTML = catalog_list[currentItem.catalog_id][0] || "";
+          });
+          newItemTable.appendChild(newTableBody)
+          newItemTableCard.appendChild(newItemTable)
+          newHeader.appendChild(newItemTableCard)
+          catFoodTable.appendChild(newHeader)
+        })
+        .catch(function(error) {
+            console.log("Error getting documents: ", error);
+        });
 
-            let cellCatalogCH = newRow.insertCell();
-            cellCatalogCH.innerHTML = catalog_list[currentItem.catalog_id][1] || "";
-
-            let cellAvail = newRow.insertCell();
-            cellAvail.innerHTML = currentItem.available;
-          });              
-        }
       })
-      .catch(function(error) {
-          console.log("Error getting documents: ", error);
-      });
-      */
+    }
+
+    function addCategory () {
+      let currentUser = window.sellerInfo;
+      let catObj = {
+        available: true,
+        title: $("#catForm-name").val(),
+        title_zh: $("#catForm-name-ch").val(),
+        updated_at: new Date().getTime()
+      }
+      let errorText = document.getElementById("inputFormError");
+      if (catObj.title == "" || catObj.title_zh == "") {
+        errorText.style.display = "block";
+      } else {
+        db.collection("sellers").doc(currentUser.obj.id).collection("catalogs").add(catObj).then(function(docRef) {
+          catObj.id = docRef.id;
+          db.collection("sellers").doc(currentUser.obj.id).collection("catalogs").doc(docRef.id).update({
+            id: docRef.id
+          }).then(function() {
+            $("#addCategory").modal('hide');
+            errorText.style.display = "none";
+            initCatList();
+            initFoodItemBox();
+          })
+          .catch(function(error) {
+              console.error("Error updating catalog record: ", error);
+          });
+        })
+        .catch(function(error) {
+            console.error("Error adding catalog record: ", error);
+        });
+      }
     }
 
     function initPage () {
@@ -369,7 +449,7 @@
           </div><!-- /.col -->
           <div class="col-sm-6">
             <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">LG1 Restaurant</a></li>
+              <li id="emailAddrTopNav" class="breadcrumb-item"><a href="#"></a></li>
               <li class="breadcrumb-item active">Menu Contents</li>
             </ol>
           </div><!-- /.col -->
@@ -391,7 +471,6 @@
                 <table class="table table-striped">
                   <thead>
                     <tr>
-                      <th>ID</th>
                       <th>Title</th>
                       <th></th>
                     </tr>
@@ -416,25 +495,26 @@
                       <div class="form-group">
                         <label>Food category ID:</label>
                         <div class="input-group">
-                          <input type="text" class="form-control" placeholder="Leave blank for automatic ID creation">
+                          <input type="text" class="form-control" placeholder="Leave blank for automatic ID creation" id="catForm-id">
                         </div>
                       </div>
                       <div class="form-group">
-                        <label>Food category name: <span style="color:red;">(Required)</span></label>
+                        <label>Category name: <span style="color:red;">(Required)</span></label>
                         <div class="input-group">
-                          <input type="text" class="form-control">
+                          <input type="text" class="form-control" id="catForm-name">
                         </div>
                       </div>
                       <div class="form-group">
-                        <label>Description: <span style="color:red;">(Required)</span></label>
+                        <label>Category name (ZH): <span style="color:red;">(Required)</span></label>
                         <div class="input-group">
-                          <input type="text" class="form-control">
+                          <input type="text" class="form-control" id="catForm-name-ch">
                         </div>
                       </div>
                     </div>
                     <div class="modal-footer">
+                      <p id="inputFormError" style="display: none; color: red;">Please check your input!</p>
                       <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                      <button type="button" class="btn btn-primary">Add category</button>
+                      <button type="button" class="btn btn-primary" onclick="addCategory()">Add category</button>
                     </div>
                   </div>
                 </div>
@@ -446,75 +526,8 @@
               <div class="card-header">
                 <h3 class="card-title">Categories with Food Items</h3>
               </div>
-              <div class="card-body">
-                <div class="form-group">
-                  <p><strong>Appetizers</strong></p>
-                </div>
-                <div class="form-group">
-                <table class="table table-striped table-sm">
-                  <thead>
-                    <tr>
-                      <th style="width: 20%;">Food ID</th>
-                      <th style="width: 70%;">Name</th>
-                      <th style="width: 10%;">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>I-0003</td>
-                      <td>Caesar Salad</td>
-                      <td>30</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-                <div class="form-group">
-                  <p><strong>Main course</strong></p>
-                </div>
-                <div class="form-group">
-                <table class="table table-striped table-sm">
-                  <thead>
-                    <tr>
-                      <th style="width: 20%;">Food ID</th>
-                      <th style="width: 70%;">Name</th>
-                      <th style="width: 10%;">Price</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr>
-                      <td>I-0001</td>
-                      <td>Chicken &amp; Egg Burger</td>
-                      <td>15</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              <div class="form-group">
-                <p><strong>Dessert</strong></p>
-              </div>
-              <div class="form-group">
-                <table class="table table-striped table-sm">
-                <thead>
-                  <tr>
-                    <th style="width: 20%;">Food ID</th>
-                    <th style="width: 70%;">Name</th>
-                    <th style="width: 10%;">Price</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>I-0006</td>
-                    <td>Apple Pie</td>
-                    <td>8</td>
-                  </tr>
-                </tbody>
-              </table>
+            <div class="card-body" id="cat-food-table">
             </div>
-            </div>
-            <div class="card-footer">
-              To change the category of the food items, please visit the <a href="foodItems.html">Food Items</a> page to edit the food item.
-            </div>
-          </div>
         </div>
       </div><!-- /.container-fluid -->
     </section>
