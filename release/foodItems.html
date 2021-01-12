@@ -362,6 +362,7 @@
           db.collection("sellers").doc(currentUser.obj.id).collection("items").doc(docRef.id).update({
             id: docRef.id
           }).then(function() {
+            $("#editOrAddModal").modal('hide')
             findTableItems(itemCat);
             changeDetailPage(docRef.id);
           })
@@ -404,6 +405,7 @@
         .doc(itemId).update(itemObj).then(function() {
           findTableItems(itemCat);
           changeDetailPage(itemId);
+          $("#addCategory").modal('hide');
         })
         .catch(function(error) {
             console.error("Error updating food item record: ", error);
@@ -637,9 +639,9 @@
               <div class="card-header">
                 <h3 class="card-title">Detail</h3>
                 <div class="card-tools">
-                  <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#exampleModal">Edit / Add</button>
+                  <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#editOrAddModal">Edit / Add</button>
                   <!-- Modal -->
-                <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+                <div class="modal fade" id="editOrAddModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="modal-dialog" role="document">
                     <div class="modal-content">
                       <div class="modal-header">
@@ -699,11 +701,11 @@
                         </div>
                       </div>
                       <div class="form-group">
-                          <label id="addItemError" style="color: red; display: none;">You Should Fill in All the Blanks !!</label>
+                          <label id="addItemError" style="color: red; display: none; text-align: center;">You Should Fill in All the Blanks !!</label>
                       </div>
                       <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                        <button type="button" class="btn btn-success" data-dismiss="modal" onclick="addItem()">Save As New Item</button>
+                        <button type="button" class="btn btn-success" onclick="addItem()">Save As New Item</button>
                         <button type="button" class="btn btn-primary" data-dismiss="modal" onclick="editItem()">Edit Current Item</button>
                       </div>
                     </div>
