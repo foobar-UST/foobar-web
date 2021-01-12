@@ -405,7 +405,6 @@
         .doc(itemId).update(itemObj).then(function() {
           findTableItems(itemCat);
           changeDetailPage(itemId);
-          $("#addCategory").modal('hide');
         })
         .catch(function(error) {
             console.error("Error updating food item record: ", error);
