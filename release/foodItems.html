@@ -120,7 +120,29 @@
           docRef = db.collection("sellers").doc(currentUser.obj.id).collection("items")
         }
         docRef.get().then(function(querySnapshot) {
-          if (querySnapshot.empty) { console.log("NO DATA"); }
+          if (querySnapshot.empty) { 
+            let newRow = datatable.insertRow();
+            let cellTitleENG = newRow.insertCell();
+            cellTitleENG.innerHTML = "No Food item";
+            newRow.insertCell();
+            newRow.insertCell();
+            newRow.insertCell();
+            newRow.insertCell();
+            newRow.insertCell();
+            newRow.insertCell();
+            newRow.onmouseover=function(){
+              if ( this.className === '') {
+                  this.className='highlight';
+              }
+              return false
+            }
+            newRow.onmouseout=function(){
+              if ( this.className === 'highlight') {
+                  this.className='';
+              }
+              return false
+            }
+          }
           else {
             querySnapshot.forEach( function(doc) {
               let currentItem = doc.data();
@@ -245,7 +267,7 @@
               cellTitleCH.innerHTML = currentItem.title_zh;
 
               let cellPrice = document.getElementById("details-price");
-              cellPrice.innerHTML = "$" + currentItem.price;
+              cellPrice.innerHTML = currentItem.price;
 
               let cellCount = document.getElementById("details-stock");
               cellCount.innerHTML = currentItem.count;
@@ -263,10 +285,10 @@
               cellAvail.innerHTML = currentItem.available;
 
               let cellDescriptionENG = document.getElementById("details-description");
-              cellDescriptionENG.innerHTML = currentItem.description || "EMPTY";
+              cellDescriptionENG.innerHTML = currentItem.description || null;
 
               let cellDescriptionCH = document.getElementById("details-description-ch");
-              cellDescriptionCH.innerHTML = currentItem.description_zh || "空白";
+              cellDescriptionCH.innerHTML = currentItem.description_zh || null;
             });              
           }
         })
@@ -296,7 +318,7 @@
             cellTitleCH.innerHTML = currentItem.title_zh;
 
             let cellPrice = document.getElementById("details-price");
-            cellPrice.innerHTML = "$" + currentItem.price;
+            cellPrice.innerHTML = currentItem.price;
 
             let cellCount = document.getElementById("details-stock");
             cellCount.innerHTML = currentItem.count;
@@ -314,10 +336,10 @@
             cellAvail.innerHTML = currentItem.available;
 
             let cellDescriptionENG = document.getElementById("details-description");
-            cellDescriptionENG.innerHTML = currentItem.description || "EMPTY";
+            cellDescriptionENG.innerHTML = currentItem.description || null;
 
             let cellDescriptionCH = document.getElementById("details-description-ch");
-            cellDescriptionCH.innerHTML = currentItem.description_zh || "空白";
+            cellDescriptionCH.innerHTML = currentItem.description_zh || null;
           }
         })
       }
@@ -338,17 +360,22 @@
           title_zh: $("#update-name-ch").val(),
           description: $("#update-descrip").val(),
           description_zh: $("#update-descrip-ch").val(),
-          price: $("#update-price").val(),
-          count: $("#update-count").val(),
+          price: parseInt($("#update-price").val()),
+          count: parseInt($("#update-count").val()),
           catalog_id: itemCat,
           available: itemAvail,
-          updated_at: new Date().getTime(),
+          updated_at: firebase.firestore.Timestamp.fromDate(new Date()),
         }
 
         let errorText = document.getElementById("addItemError");
         for (element of Object.keys(checker)) {
           if (checker[element] == "") {
             if (element == "description" || element == "description_zh") {
+              checker[element] = null;
+              continue;
+            }
+            if (element == "available") {
+              checker[element] = false;
               continue;
             }
             errorText.style.display = "block";
@@ -385,11 +412,11 @@
           title_zh: $("#update-name-ch").val(),
           description: $("#update-descrip").val(),
           description_zh: $("#update-descrip-ch").val(),
-          price: $("#update-price").val(),
-          count: $("#update-count").val(),
+          price: parseInt($("#update-price").val()),
+          count: parseInt($("#update-count").val()),
           catalog_id: itemCat,
           available: itemAvail,
-          updated_at: new Date().getTime(),
+          updated_at: firebase.firestore.Timestamp.fromDate(new Date()),
         }
         let itemObj = {}
         Object.keys(checker).forEach( function (element) {
@@ -409,6 +436,36 @@
         .catch(function(error) {
             console.error("Error updating food item record: ", error);
         });
+      }
+
+      function prepInsert () {
+        let insertTitle = document.getElementById('update-name');
+        insertTitle.value = document.getElementById('details-name').innerHTML;
+
+        let insertTitleCH = document.getElementById('update-name-ch');
+        insertTitleCH.value = document.getElementById('details-name-ch').innerHTML;
+
+        let insertDescrip = document.getElementById('update-descrip');
+        insertDescrip.value = document.getElementById('details-description').innerHTML;
+
+        let insertDescripCH = document.getElementById('update-descrip-ch');
+        insertDescripCH.value = document.getElementById('details-description-ch').innerHTML;
+
+        let insertPrice = document.getElementById('update-price');
+        insertPrice.value = parseInt(document.getElementById('details-price').innerHTML);
+
+        let insertCount = document.getElementById('update-count');
+        insertCount.value = document.getElementById('details-stock').innerHTML;
+
+        //let insertCat = document.getElementById('update-cat');
+        //insertCat.value = document.getElementById('details-cat').value;
+
+        let insertAvail = document.getElementById('update-avail');
+        if (document.getElementById('details-avail').innerHTML == 'true') {
+          insertAvail.checked = true;
+        } else {
+          insertAvail.checked = false;
+        }
       }
 
       function initPage () {
@@ -638,7 +695,7 @@
               <div class="card-header">
                 <h3 class="card-title">Detail</h3>
                 <div class="card-tools">
-                  <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#editOrAddModal">Edit / Add</button>
+                  <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#editOrAddModal" onclick="prepInsert()">Edit / Add</button>
                   <!-- Modal -->
                 <div class="modal fade" id="editOrAddModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="modal-dialog" role="document">
