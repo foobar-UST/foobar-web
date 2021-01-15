@@ -199,6 +199,11 @@
               cellAvail.innerHTML = currentItem.available;
             });              
           }
+          $('#datatable-all').DataTable({
+            select: 'single',
+            paging: true,
+            ordering:  true,
+          });
         })
         .catch(function(error) {
             console.log("Error getting documents: ", error);
@@ -247,7 +252,11 @@
         .limit(1)
         .get()
         .then(function(querySnapshot) {
-          if (querySnapshot.empty) { console.log("NO DATA"); }
+          if (querySnapshot.empty) { 
+            console.log("NO DATA");
+            let cellId = document.getElementById("details-id")
+            cellId.innerHTML = "No Item";
+          }
           else {
             querySnapshot.forEach( function(doc) {
               let currentItem = doc.data();
@@ -405,6 +414,7 @@
       function editItem () {
         let currentUser = window.sellerInfo;
         let itemId = document.getElementById('details-id').innerHTML;
+        if (itemId == "No Item") { return; }
         let itemCat = document.getElementById('update-cat').value;
         let itemAvail = document.getElementById('update-avail').checked;
         let checker = {
@@ -844,7 +854,7 @@
             <!-- /.card-header -->
             <div class="card-body">
               <div id="example1_wrapper" class="dataTables_wrapper dt-bootstrap4"><div class="row"><div class="col-sm-12">
-                <table class="table table-bordered dataTable dtr-inline" role="grid" aria-describedby="example1_info">
+                <table id="datatable-all" class="table table-bordered dataTable dtr-inline" role="grid" aria-describedby="example1_info">
                 <thead>
                   <tr role="row">
                     <th class="sorting" tabindex="0" aria-controls="example1" rowspan="1" colspan="1" aria-label="Browser: activate to sort column ascending">Title</th>
@@ -941,6 +951,9 @@
 <script src="dist/js/pages/dashboard.js"></script>
 <!-- AdminLTE for demo purposes -->
 <script src="dist/js/demo.js"></script>
+<!-- DataTable -->
+<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.23/css/jquery.dataTables.css">
+<script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.10.23/js/jquery.dataTables.js"></script>
 </body>
 </html>
 
