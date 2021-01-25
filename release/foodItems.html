@@ -110,6 +110,9 @@
       function findTableItems (catalog) {
         let currentUser = window.sellerInfo;
         let datatable = document.getElementById("main-datatable");
+        if (window.datatableAll) {
+          window.datatableAll.destroy();
+        }
         datatable.innerHTML = "";
         let docRef;
         if (catalog !== 'all' && catalog_list[catalog] !== undefined) {
@@ -150,27 +153,27 @@
               let newRow = datatable.insertRow();
               newRow.id = currentItem.id;
               newRow.onmouseover=function(){
-                if ( this.className === '') {
-                    this.className='highlight';
+                if ( !(this.className.includes('highlight')) ) {
+                    this.className += ' highlight';
                 }
                 return false
               }
               newRow.onmouseout=function(){
-                if ( this.className === 'highlight') {
-                    this.className='';
+                if ( this.className.includes('highlight') ) {
+                    this.className = this.className.replace(' highlight', '');
                 }
                 return false
               }
               newRow.onmousedown=function(){
                 if ( this.className !== 'clicked' ) {
                     if ( selected !== null ) {
-                        selected.className='';
+                        selected.className = selected.className.replace(' clicked', '');
                     }
-                    this.className='clicked';
+                    this.className += ' clicked';
                     selected = this;
                 }
                 else {
-                    this.className='';
+                    this.className = this.className.replace(' clicked', '');
                     selected = null;
                 }
                 changeDetailPage(this.id);
@@ -199,7 +202,7 @@
               cellAvail.innerHTML = currentItem.available;
             });              
           }
-          $('#datatable-all').DataTable({
+          window.datatableAll = $('#datatable-all').DataTable({
             select: 'single',
             paging: true,
             ordering:  true,
@@ -373,7 +376,7 @@
           count: parseInt($("#update-count").val()),
           catalog_id: itemCat,
           available: itemAvail,
-          updated_at: firebase.firestore.Timestamp.fromDate(new Date()),
+          updated_at: firebase.firestore.FieldValue.serverTimestamp(),
         }
 
         let errorText = document.getElementById("addItemError");
@@ -426,7 +429,7 @@
           count: parseInt($("#update-count").val()),
           catalog_id: itemCat,
           available: itemAvail,
-          updated_at: firebase.firestore.Timestamp.fromDate(new Date()),
+          updated_at: firebase.firestore.FieldValue.serverTimestamp(),
         }
         let itemObj = {}
         Object.keys(checker).forEach( function (element) {
@@ -492,10 +495,10 @@
     color: orange;
   }
   tr.highlight {
-    background: #eef;
+    background: #eef !important;
   }
   tr.clicked {
-    background: #ccd; 
+    background: #ccd !important;
   }
   </style>
 </head>
