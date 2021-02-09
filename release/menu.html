@@ -256,6 +256,30 @@
       }
     }
 
+    function toggleRestOnline() {
+      var db = firebase.firestore();
+      var user = firebase.auth().currentUser;
+      db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+          queryResult.forEach(function(doc) {
+              if (doc.data().online) {
+                  db.collection("sellers").doc(doc.data().id).update({
+                      online: false
+                  }).then(function() {
+                      $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                      $('#restOnline').html('Closed');
+                  });
+              } else {
+                  db.collection("sellers").doc(doc.data().id).update({
+                      online: true
+                  }).then(function() {
+                      $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                      $('#restOnline').html('Open');
+                  });
+              }
+          });
+      });
+    }
+
     function initPage () {
       initCatList();
     }
@@ -429,6 +453,12 @@
               <p>
                 Ratings
               </p>
+            </a>
+          </li>
+          <li class="nav-header">Restaurant Status</li>
+          <li class="nav-item">
+            <a href="#" class="nav-link">
+              <button type="button" class="btn-success btn" id="restOnline" onclick="toggleRestOnline()">Open</button>
             </a>
           </li>
       </nav>
