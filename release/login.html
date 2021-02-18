@@ -34,7 +34,7 @@
     </script>
 </head>
 
-<body class="hold-transition login-page" onload="checkSignIn();">
+<body class="hold-transition login-page">
     <div class="login-box">
         <div class="login-logo">
             <a>Foobar++</a>
@@ -81,13 +81,6 @@
     <!-- /.login-box -->
 
     <script>
-        function checkSignIn() {
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user) {
-                    window.location.replace('index.html');
-                }
-            });
-        }
         /**
          * @param {string} state - "load"/"success"/anything else
          */
@@ -112,9 +105,10 @@
             firebase.auth().signInWithEmailAndPassword(getAuthEmail, getAuthPwd).then((user) => {
                     // Signed in without problems
                     var user = firebase.auth().currentUser;
-                    var isSeller = false;
+
                     db.collection("users").doc(user.uid).get().then(function(doc) {
                         //console.log(doc.data().roles);
+                        var isSeller = false;
                         doc.data().roles.forEach(function(role) {
                             if (role == "seller") {
                                 //console.log('isManager? ' + role);
@@ -122,9 +116,11 @@
                             }
                         });
                         if (isSeller) {
+                            console.log("isSeller");
                             changeButtonState("success");
                             window.location.replace('index.html');
                         } else {
+                            console.log("isNotSeller");
                             changeButtonState("off");
                             document.getElementById('errorPrompt').innerText = "Requested resource is not available. Requested user is not a seller.";
                             firebase.auth().signOut();

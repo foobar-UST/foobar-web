@@ -34,17 +34,16 @@
     <!-- jQuery UI 1.11.4 -->
     <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-app.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
     <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
     <script src="js/firebase.config.js"></script>
     <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/css/toastr.min.css" />
     <script type="text/javascript">
         // define global variables
-        var seller_id = null;
         $(document).ready(function() {
             setTimeout(function() {
                 $('#loading_wrap').fadeOut();
@@ -54,6 +53,7 @@
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
                     // User is signed in.
+                    console.log("Auth Token: ", user.getIdToken());
                     var db = firebase.firestore();
                     db.collection("users").doc(user.uid).get().then(function(doc) {
                         if (!(doc.data().createdRest)) {
@@ -61,15 +61,66 @@
                             window.location.replace('createRest.html');
                         }
                     });
-                    var displayName = user.displayName;
                     var email = user.email;
-                    var emailVerified = user.emailVerified;
-                    var photoURL = user.photoURL;
                     var uid = user.uid;
-                    var phoneNumber = user.phoneNumber;
-                    var providerData = user.providerData;
-                    document.getElementById("emailAddrSideBar").innerText = email;
-                    document.getElementById("emailAddrTopNav").innerText = email;
+                    var seller_id = null;
+                    db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            seller_id = doc.data().id;
+                            document.getElementById("emailAddrSideBar").innerText = doc.data().name;
+                            document.getElementById("emailAddrTopNav").innerText = doc.data().name;
+                            if (doc.data().online) {
+                                $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                                $('#restOnline').html('Open');
+                            } else {
+                                $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                                $('#restOnline').html('Closed');
+                            }
+                        })
+                    })
+
+                    db.collection("sellers").where("by_user_id", "==", uid).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            var rating = doc.data().rating;
+                            rating = Math.ceil(rating);
+                            for (var i = 0; i < 5; i++) {
+                                if (i < rating) {
+                                    var star = document.createElement("span");
+                                    star.classList.add("fa");
+                                    star.classList.add("fa-star");
+                                    star.classList.add("checked");
+                                    document.getElementById('ratingCount').appendChild(star);
+                                } else {
+                                    var emptyStar = document.createElement("span");
+                                    emptyStar.classList.add("fa");
+                                    emptyStar.classList.add("fa-star");
+                                    document.getElementById('ratingCount').appendChild(emptyStar);
+                                }
+                            }
+                            var ratingCount = doc.data().rating_count;
+                            document.getElementById('numRating').innerHTML = ratingCount;
+                            if (ratingCount > 1) {
+                                document.getElementById('numRating_s').innerHTML = "s";
+                            }
+                        })
+                    })
+                    db.collection("sellers").where("by_user_id", "==", uid).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            db.collection("orders_basic").where("seller_id", "==", doc.data().id).onSnapshot((snapshot) => {
+                                snapshot.docChanges().forEach((change) => {
+                                    if (change.type === "added") {
+                                        let stmt = "New order with ID #" + change.doc.data().identifier + " has been received.";
+                                        toastr.info(stmt, 'Order #' + change.doc.data().identifier, {
+                                            timeOut: 0
+                                        });
+                                        toastr.options.onclick = function() {
+                                            console.log(change.doc.data().identifier + " toaster has been clicked.");
+                                        }
+                                    }
+                                })
+                            })
+                        })
+                    })
                 } else {
                     // User is signed out.
                     window.location.replace("login.html");
@@ -225,41 +276,6 @@
 </head>
 
 <body class="hold-transition sidebar-mini layout-fixed">
-    <div id='loading_wrap' style='background-color: white; z-index: 9999; position:fixed; height:100%; width:100%; overflow:hidden; top:0; left:0;'>
-        <div style='font-size: 32px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 50%; width: 100%;'>
-            <div class="loadingio-spinner-spin-ax7491be6mu">
-                <div class="ldio-jvfgw8pv7fi">
-                    <div>
-                        <div></div>
-                    </div>
-                    <div>
-                        <div></div>
-                    </div>
-                    <div>
-                        <div></div>
-                    </div>
-                    <div>
-                        <div></div>
-                    </div>
-                    <div>
-                        <div></div>
-                    </div>
-                    <div>
-                        <div></div>
-                    </div>
-                    <div>
-                        <div></div>
-                    </div>
-                    <div>
-                        <div></div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div style='font-size: 24px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 75%; width: 100%;'>
-            Loading, please wait...
-        </div>
-    </div>
     <div class="wrapper">
         <!-- Navbar -->
         <nav class="main-header navbar navbar-expand navbar-white navbar-light">
@@ -285,8 +301,8 @@
                     <input class="form-control form-control-navbar" type="search" placeholder="Search items" aria-label="Search">
                     <div class="input-group-append">
                         <button class="btn btn-navbar" type="submit">
-              <i class="fas fa-search"></i>
-            </button>
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -418,6 +434,12 @@
                                 </p>
                             </a>
                         </li>
+                        <li class="nav-header">Restaurant Status</li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <button type="button" class="btn btn-success" id="restOnline" onclick="toggleRestOnline()">Opened!</button>
+                            </a>
+                        </li>
                 </nav>
                 <!-- /.sidebar-menu -->
             </div>
@@ -453,6 +475,41 @@
             <!-- Main content -->
             <section class="content">
                 <div class="container-fluid">
+                    <div id='loading_wrap' style='background-color: white; z-index: 9999; position:fixed; height:100%; width:100%; overflow:hidden; top:0; left:0;'>
+                        <div style='font-size: 32px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 50%; width: 100%;'>
+                            <div class="loadingio-spinner-spin-ax7491be6mu">
+                                <div class="ldio-jvfgw8pv7fi">
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                    <div>
+                                        <div></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style='font-size: 24px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 75%; width: 100%;'>
+                            Loading, please wait...
+                        </div>
+                    </div>
                     <!-- Small boxes (Stat box) -->
                     <div class="row">
                         <div class="col-lg-3 col-6">
@@ -466,7 +523,8 @@
                                 <div class="icon">
                                     <i class="ion ion-bag"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                                <a href="#" class="small-box-footer">More info <i
+                                        class="fas fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
                         <!-- ./col -->
@@ -481,7 +539,8 @@
                                 <div class="icon">
                                     <i class="ion ion-stats-bars"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                                <a href="#" class="small-box-footer">More info <i
+                                        class="fas fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
                         <!-- ./col -->
@@ -496,7 +555,8 @@
                                 <div class="icon">
                                     <i class="ion ion-cube"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                                <a href="#" class="small-box-footer">More info <i
+                                        class="fas fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
                         <!-- ./col -->
@@ -504,18 +564,16 @@
                             <!-- small box -->
                             <div class="small-box bg-info">
                                 <div class="inner">
-                                    <h3><span class="fa fa-star checked"></span>
-                                        <span class="fa fa-star checked"></span>
-                                        <span class="fa fa-star checked"></span>
-                                        <span class="fa fa-star checked"></span>
-                                        <span class="fa fa-star"></span></h3>
+                                    <h3 id="ratingCount"></h3>
 
-                                    <p>Customer rating</p>
+                                    <p><span id="numRating"></span> Customer rating<span id="numRating_s"></span> attained
+                                    </p>
                                 </div>
                                 <div class="icon">
                                     <i class="ion ion-star"></i>
                                 </div>
-                                <a href="#" class="small-box-footer">More info <i class="fas fa-arrow-circle-right"></i></a>
+                                <a href="#" class="small-box-footer">More info <i
+                                        class="fas fa-arrow-circle-right"></i></a>
                             </div>
                         </div>
                         <!-- ./col -->
@@ -572,9 +630,9 @@
                                         <li>
                                             <!-- drag handle -->
                                             <span class="handle">
-                        <i class="fas fa-ellipsis-v"></i>
-                        <i class="fas fa-ellipsis-v"></i>
-                      </span>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </span>
                                             <!-- checkbox -->
                                             <div class="icheck-primary d-inline ml-2">
                                                 <input type="checkbox" value="" name="todo1" id="todoCheck1" checked>
@@ -583,7 +641,8 @@
                                             <!-- todo text -->
                                             <span class="text">Populate restaurant details</span>
                                             <!-- Emphasis label -->
-                                            <small class="badge badge-danger"><i class="far fa-clock"></i> 2 mins</small>
+                                            <small class="badge badge-danger"><i class="far fa-clock"></i> 2
+                                                mins</small>
                                             <!-- General tools such as edit or delete-->
                                             <div class="tools">
                                                 <i class="fas fa-edit"></i>
@@ -592,9 +651,9 @@
                                         </li>
                                         <li>
                                             <span class="handle">
-                        <i class="fas fa-ellipsis-v"></i>
-                        <i class="fas fa-ellipsis-v"></i>
-                      </span>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </span>
                                             <div class="icheck-primary d-inline ml-2">
                                                 <input type="checkbox" value="" name="todo2" id="todoCheck2">
                                                 <label for="todoCheck2"></label>
@@ -608,15 +667,16 @@
                                         </li>
                                         <li>
                                             <span class="handle">
-                        <i class="fas fa-ellipsis-v"></i>
-                        <i class="fas fa-ellipsis-v"></i>
-                      </span>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </span>
                                             <div class="icheck-primary d-inline ml-2">
                                                 <input type="checkbox" value="" name="todo3" id="todoCheck3">
                                                 <label for="todoCheck3"></label>
                                             </div>
                                             <span class="text">Edit food menu</span>
-                                            <small class="badge badge-warning"><i class="far fa-clock"></i> 1 day</small>
+                                            <small class="badge badge-warning"><i class="far fa-clock"></i> 1
+                                                day</small>
                                             <div class="tools">
                                                 <i class="fas fa-edit"></i>
                                                 <i class="fas fa-trash-o"></i>
@@ -624,15 +684,16 @@
                                         </li>
                                         <li>
                                             <span class="handle">
-                        <i class="fas fa-ellipsis-v"></i>
-                        <i class="fas fa-ellipsis-v"></i>
-                      </span>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </span>
                                             <div class="icheck-primary d-inline ml-2">
                                                 <input type="checkbox" value="" name="todo4" id="todoCheck4">
                                                 <label for="todoCheck4"></label>
                                             </div>
                                             <span class="text">Restock food items</span>
-                                            <small class="badge badge-success"><i class="far fa-clock"></i> 3 days</small>
+                                            <small class="badge badge-success"><i class="far fa-clock"></i> 3
+                                                days</small>
                                             <div class="tools">
                                                 <i class="fas fa-edit"></i>
                                                 <i class="fas fa-trash-o"></i>
@@ -640,9 +701,9 @@
                                         </li>
                                         <li>
                                             <span class="handle">
-                        <i class="fas fa-ellipsis-v"></i>
-                        <i class="fas fa-ellipsis-v"></i>
-                      </span>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                                <i class="fas fa-ellipsis-v"></i>
+                                            </span>
                                             <div class="icheck-primary d-inline ml-2">
                                                 <input type="checkbox" value="" name="todo6" id="todoCheck6">
                                                 <label for="todoCheck6"></label>
@@ -657,7 +718,8 @@
                                 </div>
                                 <!-- /.card-body -->
                                 <div class="card-footer clearfix">
-                                    <button type="button" class="btn btn-info float-right"><i class="fas fa-plus"></i> Add item</button>
+                                    <button type="button" class="btn btn-info float-right"><i class="fas fa-plus"></i>
+                                        Add item</button>
                                 </div>
                             </div>
                             <!-- /.card -->
@@ -675,11 +737,11 @@
                                     <!-- card tools -->
                                     <div class="card-tools">
                                         <button type="button" class="btn btn-primary btn-sm daterange" data-toggle="tooltip" title="Date range">
-                      <i class="far fa-calendar-alt"></i>
-                    </button>
+                                            <i class="far fa-calendar-alt"></i>
+                                        </button>
                                         <button type="button" class="btn btn-primary btn-sm" data-card-widget="collapse" data-toggle="tooltip" title="Collapse">
-                      <i class="fas fa-minus"></i>
-                    </button>
+                                            <i class="fas fa-minus"></i>
+                                        </button>
                                     </div>
                                     <!-- /.card-tools -->
                                 </div>
@@ -719,11 +781,11 @@
 
                                     <div class="card-tools">
                                         <button type="button" class="btn bg-info btn-sm" data-card-widget="collapse">
-                      <i class="fas fa-minus"></i>
-                    </button>
+                                            <i class="fas fa-minus"></i>
+                                        </button>
                                         <button type="button" class="btn bg-info btn-sm" data-card-widget="remove">
-                      <i class="fas fa-times"></i>
-                    </button>
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </div>
                                 </div>
                                 <div class="card-body">
@@ -769,7 +831,7 @@
                                         <!-- button with a dropdown -->
                                         <div class="btn-group">
                                             <button type="button" class="btn btn-success btn-sm dropdown-toggle" data-toggle="dropdown" data-offset="-52">
-                        <i class="fas fa-bars"></i></button>
+                                                <i class="fas fa-bars"></i></button>
                                             <div class="dropdown-menu" role="menu">
                                                 <a href="#" class="dropdown-item">Add new event</a>
                                                 <a href="#" class="dropdown-item">Clear events</a>
@@ -778,11 +840,11 @@
                                             </div>
                                         </div>
                                         <button type="button" class="btn btn-success btn-sm" data-card-widget="collapse">
-                      <i class="fas fa-minus"></i>
-                    </button>
+                                            <i class="fas fa-minus"></i>
+                                        </button>
                                         <button type="button" class="btn btn-success btn-sm" data-card-widget="remove">
-                      <i class="fas fa-times"></i>
-                    </button>
+                                            <i class="fas fa-times"></i>
+                                        </button>
                                     </div>
                                     <!-- /. tools -->
                                 </div>
@@ -826,7 +888,36 @@
             })
         }
     </script>
-
+    <script>
+        $('body').on('removed.lte.toasts', function() {
+            console.log(this.id);
+        })
+    </script>
+    <script>
+        function toggleRestOnline() {
+            var db = firebase.firestore();
+            var user = firebase.auth().currentUser;
+            db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                queryResult.forEach(function(doc) {
+                    if (doc.data().online) {
+                        db.collection("sellers").doc(doc.data().id).update({
+                            online: false
+                        }).then(function() {
+                            $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                            $('#restOnline').html('Closed');
+                        });
+                    } else {
+                        db.collection("sellers").doc(doc.data().id).update({
+                            online: true
+                        }).then(function() {
+                            $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                            $('#restOnline').html('Open');
+                        });
+                    }
+                });
+            });
+        }
+    </script>
     <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
     <script>
         $.widget.bridge('uibutton', $.ui.button)

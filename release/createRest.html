@@ -31,7 +31,18 @@
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-storage.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB19RcL0RqpaMTJXEyzQ7sXoeP1tyKtPNM&callback=initMap&libraries=&v=weekly" defer></script>
     <script src="js/firebase.config.js"></script>
+    <script>
+        let map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("mapTest"), {
+                center: new google.maps.LatLng(-34.397, 150.644),
+                zoom: 8,
+            });
+        }
+    </script>
 </head>
 
 <body class="hold-transition login-page" onload="checkHasRest()">
@@ -112,7 +123,7 @@
                                             <option>Chinese</option>
                                             <option>Japanese</option>
                                             <option>Korean</option>
-                                            <option>Indian</option>
+                                            <option>Western</option>
                                             <option>American</option>
                                             <option>European</option>
                                         </select>
@@ -147,14 +158,30 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Phone number:</label>
-                                        <div class="input-group date" id="timepicker" data-target-input="nearest">
-                                            <input type="text" class="form-control" id="phoneNum" />
-                                            <div class="input-group-append" data-target="#timepicker" data-toggle="datetimepicker">
-                                                <div class="input-group-text"><i class="far fa-phone"></i>
-                                                </div>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone"></i></span>
                                             </div>
+                                            <input type="text" class="form-control" data-mask id="phoneNum" />
                                         </div>
-                                        <!-- /.input group -->
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Address (English):</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restAddr" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Address (Chinese):</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restAddrZH" />
+                                        </div>
                                     </div>
                                     <!-- /.form group -->
                                     <div class="form-group">
@@ -163,12 +190,7 @@
                                             <input type="file" accept="image/*" id="restImg">
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Image preview:</label>
-                                    </div>
-                                    <div class="form-group">
-                                        <img src="https://image.shutterstock.com/image-photo/restaurant-chilling-out-classy-lifestyle-600w-507639565.jpg" class="img-fluid">
-                                    </div>
+                                    <div class="form-group" id="mapTest"></div>
                                 </div>
                             </div>
                         </div>
@@ -228,7 +250,7 @@
                 var _phone = $('#phoneNum').val();
                 // Need Google Maps SDK
                 var _location = null;
-                var _minSpend = $('#minSpend').val();
+                var _minSpend = Number($('#minSpend').val());
                 var _type = null;
                 if ($('#restType').val() == "On-campus") {
                     _type = 0;
@@ -237,19 +259,31 @@
                 }
                 var _openHours = $('#openHours').val();
                 var _tags = $('#restTags').val();
+                var _restAddr = $('#restAddr').val();
+                var _restAddrZH = $('#restAddrZH').val();
                 var _user_id = firebase.auth().currentUser.uid;
+                console.log(sellerDoc);
+                var db = firebase.firestore();
+                var newSellerDoc = db.collection("sellers").doc();
+                var newSellerDocID = newSellerDoc.id;
                 var sellerDoc = {
+                    id: newSellerDocID,
                     name: _restNameEng,
                     name_zh: _restNameChi,
                     description: _engDesc,
                     description_zh: _chiDesc,
                     website: _restURL,
                     phone_num: _phone,
-                    location: null,
+                    location: {
+                        address: _restAddr,
+                        address_zh: _restAddrZH,
+                        geopoint: new firebase.firestore.GeoPoint(22.32, 114.17)
+                    },
                     image_url: null,
                     min_spend: _minSpend,
-                    rating: null,
-                    rating_count: null,
+                    delivery_cost: 0,
+                    rating: 0.0,
+                    rating_count: 0,
                     type: _type,
                     online: false,
                     notice: null,
@@ -257,21 +291,40 @@
                     tags: _tags,
                     by_user_id: _user_id
                 }
-                console.log(sellerDoc);
-                var db = firebase.firestore();
-                db.collection("sellers").add(sellerDoc).then(function(docRef) {
-                        console.log("Seller Document written at: ", docRef.id);
+                newSellerDoc.set(sellerDoc).then(function() {
+                        console.log("Seller Document written at: ", newSellerDocID);
                         db.collection("users").doc(_user_id).update({
                             createdRest: true
                         });
-                        var path_filename = 'seller_images/' + docRef.id + '.jpg';
+                        var path_filename = 'seller_images/' + newSellerDocID;
                         console.log(path_filename);
                         var imgElement = document.getElementById("restImg");
                         var imageToUpload = imgElement.files[0];
                         var storageRef = firebase.storage().ref();
-                        console.log('storageRef: ' + storageRef);
                         var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
-                        window.location.replace('index.html');
+                        imageUploadTask.on('state_changed', function(snapshot) {
+                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                            // Observe state change events such as progress, pause, and resume
+                            // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            console.log('Upload is ' + progress + '% done');
+                            switch (snapshot.state) {
+                                case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                    console.log('Upload is paused');
+                                    break;
+                                case firebase.storage.TaskState.RUNNING: // or 'running'
+                                    console.log('Upload is running');
+                                    break;
+                            }
+                        }, function(error) {
+                            // Handle unsuccessful uploads
+                            console.log('Upload is unsuccessful.');
+                        }, function() {
+                            // Handle successful uploads on complete
+                            // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+                            window.location.replace('index.html');
+                        });
+
                     })
                     .catch(function(error) {
                         console.error("Error inserting seller record: ", error);

@@ -644,95 +644,23 @@
 
             <!-- Main content -->
             <section class="content">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">Food Categories</h3>
-                                </div>
-                                <div class="card-body">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Title</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="cat-list">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="card-footer">
-                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addCategory"><i
-                      class="fa fa-plus"></i> Add category</a>
-                </div>
-                <div class="modal fade" id="addCategory" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-                  aria-hidden="true">
-                  <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Add category</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="form-group">
-                                        <label>Food category ID:</label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" placeholder="Leave blank for automatic ID creation" id="catForm-id">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Category name: <span style="color:red;">(Required)</span></label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" id="catForm-name">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Category name (ZH): <span style="color:red;">(Required)</span></label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" id="catForm-name-ch">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <p id="inputFormError" style="display: none; color: red;">Please check your input!</p>
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                    <button type="button" class="btn btn-primary" onclick="addCategory()">Add category</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Categories with Food Items</h3>
-                </div>
-                <div class="card-body" id="cat-food-table">
-                </div>
-            </div>
-        </div>
-        <!-- /.container-fluid -->
-        </section>
-        <!-- /.content -->
-    </div>
-    <!-- /.content-wrapper -->
-    <footer class="main-footer">
-        <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
-        <div class="float-right d-none d-sm-inline-block">
-            <b>Version</b> 3.0.5
-        </div>
-    </footer>
 
-    <!-- Control Sidebar -->
-    <aside class="control-sidebar control-sidebar-dark">
-        <!-- Control sidebar content goes here -->
-    </aside>
-    <!-- /.control-sidebar -->
+            </section>
+            <!-- /.content -->
+        </div>
+        <!-- /.content-wrapper -->
+        <footer class="main-footer">
+            <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+            <div class="float-right d-none d-sm-inline-block">
+                <b>Version</b> 3.0.5
+            </div>
+        </footer>
+
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+        </aside>
+        <!-- /.control-sidebar -->
     </div>
     <!-- ./wrapper -->
     <script>

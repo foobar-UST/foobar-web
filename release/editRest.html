@@ -35,9 +35,8 @@
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-storage.js"></script>
     <script src="js/firebase.config.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
-    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
     <style>
         .checked {
             color: orange;
@@ -47,57 +46,9 @@
         $(document).ready(function() {
             setTimeout(function() {
                 $('#loading_wrap').fadeOut();
-            }, 2000);
-        });
-        var doc_id = null;
-        initApp = function() {
-            firebase.auth().onAuthStateChanged(function(user) {
-                if (user) {
-                    // User is signed in.
-                    $('.duallistbox').bootstrapDualListbox();
-                    document.getElementById("emailAddrSideBar").innerText = user.email;
-                    document.getElementById("emailAddrTopNav").innerText = user.email;
-                    document.getElementById("restEmail").placeholder = user.email;
-                    var db = firebase.firestore();
-                    db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
-                        queryResult.forEach(function(doc) {
-                            console.log('found!');
-                            doc_id = doc.id;
-                            document.getElementById('restNameEng').value = doc.data().name;
-                            document.getElementById('restNameChi').value = doc.data().name_zh;
-                            document.getElementById('engDesc').value = doc.data().description;
-                            document.getElementById('chiDesc').value = doc.data().description_zh;
-                            document.getElementById('restURL').value = doc.data().website;
-                            document.getElementById('phoneNum').value = doc.data().phone_num;
-                            document.getElementById('minSpend').value = doc.data().min_spend;
-                            if (doc.data().type == 1) {
-                                document.getElementById('restType').placeholder = "Off-campus";
-                            } else {
-                                document.getElementById('restType').placeholder = "On-campus";
-                            }
-                            document.getElementById('restNotice').value = doc.data().notice;
-                            document.getElementById('openHours').value = doc.data().opening_hours;
-                            document.getElementById('restImg').src = doc.data().image_url;
-                        })
-                    });
-                } else {
-                    // User is signed out.
-                    window.location.replace("login.html");
-                }
-            }, function(error) {
-                console.log(error);
-            });
-        };
-
-        window.addEventListener('load', function() {
-            initApp();
+            }, 1500);
         });
     </script>
-    <style>
-        .checked {
-            color: orange;
-        }
-    </style>
     <style type="text/css">
         @keyframes ldio-jvfgw8pv7fi {
             0% {
@@ -428,6 +379,12 @@
                                 </p>
                             </a>
                         </li>
+                        <li class="nav-header">Restaurant Status</li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <button type="button" class="btn btn-success" id="restOnline" onclick="toggleRestOnline()">Opened!</button>
+                            </a>
+                        </li>
                 </nav>
                 <!-- /.sidebar-menu -->
             </div>
@@ -514,7 +471,7 @@
                                     <div class="form-group">
                                         <div class="input-group">
                                             <div class="input-group-prepend">
-                                                <span class="input-group-text"><i class="fas fa-utensils"></i></span>
+                                                <span class="input-group-text"><i class="fab fa-safari"></i></span>
                                             </div>
                                             <input type="text" class="form-control" data-mask id="restURL">
                                         </div>
@@ -528,13 +485,24 @@
                                             <input type="text" class="form-control" placeholder="e.g. Mon-Sun: 10:00 a.m. to 6:00 p.m." data-mask id="openHours">
                                         </div>
                                     </div>
-                                    <div class="form-group">
-                                        <label>Minimum Spending (HKD):</label>
-                                        <div class="input-group date" id="timepicker" data-target-input="nearest">
-                                            <input type="text" class="form-control" id="minSpend" />
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group">
+                                                <label>Minimum Spending (HKD):</label>
+                                                <input type="text" class="form-control" id="minSpend" />
+                                                <!-- /.input group -->
+                                            </div>
                                         </div>
-                                        <!-- /.input group -->
+                                        <div class="col-sm-6">
+                                            <div class="form-group">
+                                                <label>Delivery Cost (HKD):</label>
+                                                <input type="text" class="form-control" id="deliveryCost" />
+                                                <!-- /.input group -->
+                                            </div>
+                                        </div>
                                     </div>
+
+
                                     <div class="form-group">
                                         <label>Restaurant Notice (optional):</label>
                                         <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="restNotice"></textarea>
@@ -550,10 +518,10 @@
                                     <div class="form-group">
                                         <label>Restaurant Category (can choose more than one):</label>
                                         <select class="duallistbox" multiple="multiple" id='restTags'>
-                                            <option>Chinese</option>
+                                            <option >Chinese</option>
                                             <option>Japanese</option>
                                             <option>Korean</option>
-                                            <option>Indian</option>
+                                            <option>Western</option>
                                             <option>American</option>
                                             <option>European</option>
                                         </select>
@@ -575,7 +543,8 @@
                                         </div>
                                         <div class="col-sm-6">
                                             <div class="form-group">
-                                                <button type="button" class="btn btn-success" onclick="updateConfig()"><i class="fas fa-save"></i> Save</button>
+                                                <button type="button" class="btn btn-success" onclick="updateConfig()"><i class="fas fa-save"></i>
+                                                    Save</button>
                                             </div>
                                         </div>
                                     </div>
@@ -597,12 +566,11 @@
                                     </div>
                                     <div class="form-group">
                                         <label>Phone number:</label>
-                                        <div class="input-group date" id="timepicker" data-target-input="nearest">
-                                            <input type="text" class="form-control" id="phoneNum" />
-                                            <div class="input-group-append" data-target="#timepicker" data-toggle="datetimepicker">
-                                                <div class="input-group-text"><i class="far fa-phone"></i>
-                                                </div>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone"></i></span>
                                             </div>
+                                            <input type="text" class="form-control" data-mask id="phoneNum" />
                                         </div>
                                         <!-- /.input group -->
                                     </div>
@@ -612,16 +580,9 @@
                                         <img id="restImg" class="img-fluid">
                                     </div>
                                     <div class="form-group">
+                                        <label>Upload new restaurant image:</label>
                                         <div class="input-group">
-                                            <div class="input-group-prepend">
-                                                <span class="input-group-text" id="inputGroupFileAddon01"><i
-                                                        class="fa fa-image"></i></span>
-                                            </div>
-                                            <div class="custom-file">
-                                                <input type="file" class="custom-file-input" id="inputGroupFile01" aria-describedby="inputGroupFileAddon01">
-                                                <label class="custom-file-label" for="inputGroupFile01">Choose
-                                                    file</label>
-                                            </div>
+                                            <input type="file" accept="image/*" id="restImgUpload">
                                         </div>
                                     </div>
                                 </div>
@@ -673,11 +634,62 @@
     <!-- AdminLTE for demo purposes -->
     <script src="dist/js/demo.js"></script>
     <!-- Page script -->
+    <script>
+        firebase.auth().onAuthStateChanged(function(user) {
+            if (user) {
+                // User is signed in.
+                var db = firebase.firestore();
+                db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                    queryResult.forEach(function(doc) {
+                        console.log('found!');
+                        doc_id = doc.id;
+                        document.getElementById("emailAddrSideBar").innerText = doc.data().name;
+                        document.getElementById("emailAddrTopNav").innerText = doc.data().name;
+                        document.getElementById("restEmail").placeholder = user.email;
+                        document.getElementById('restNameEng').value = doc.data().name;
+                        document.getElementById('restNameChi').value = doc.data().name_zh;
+                        document.getElementById('engDesc').value = doc.data().description;
+                        document.getElementById('chiDesc').value = doc.data().description_zh;
+                        document.getElementById('restURL').value = doc.data().website;
+                        document.getElementById('phoneNum').value = doc.data().phone_num;
+                        document.getElementById('minSpend').value = doc.data().min_spend;
 
+                        if (doc.data().type == 1) {
+                            document.getElementById('restType').placeholder = "Off-campus";
+                            document.getElementById('deliveryCost').value = doc.data().delivery_cost;
+                        } else {
+                            document.getElementById('restType').placeholder = "On-campus";
+                            document.getElementById('deliveryCost').value = doc.data().delivery_cost;
+                            $("#deliveryCost").attr('readonly', 'readonly');
+                        }
+                        document.getElementById('restNotice').value = doc.data().notice;
+                        document.getElementById('openHours').value = doc.data().opening_hours;
+                        document.getElementById('restImg').src = doc.data().image_url;
+                        if (doc.data().online) {
+                            $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                            $('#restOnline').html('Open');
+                        } else {
+                            $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                            $('#restOnline').html('Closed');
+                        }
+                        doc.data().tags.forEach(function(tag) {
+                            $("select option").each(function() {
+                                if ($(this).text() == tag) {
+                                    $(this).attr("selected", "selected");
+                                }
+                            })
+                        });
+                        $('.duallistbox').bootstrapDualListbox();
+                    });
+                });
+            } else {
+                window.location.replace('login.html');
+            }
+        })
+    </script>
     <script>
         function updateConfig() {
             var db = firebase.firestore();
-            var user = firebase.auth().currentUser;
             var _restNameEng = $('#restNameEng').val();
             var _restNameChi = $('#restNameChi').val();
             var _engDesc = $('#engDesc').val();
@@ -686,9 +698,11 @@
             var _phone = $('#phoneNum').val();
             // Need Google Maps SDK
             var _location = null;
-            var _minSpend = $('#minSpend').val();
+            var _minSpend = Number($('#minSpend').val());
             var _openHours = $('#openHours').val();
             var _tags = $('#restTags').val();
+            var _notice = $('#restNotice').val();
+            var _deliveryCost = Number($('#deliveryCost').val());
             var sellerDoc = {
                 name: _restNameEng,
                 name_zh: _restNameChi,
@@ -696,15 +710,40 @@
                 description_zh: _chiDesc,
                 website: _restURL,
                 phone_num: _phone,
-                location: null,
                 min_spend: _minSpend,
-                online: false,
-                notice: null,
+                delivery_cost: _deliveryCost,
+                notice: _notice,
                 opening_hours: _openHours,
                 tags: _tags,
             }
             db.collection("sellers").doc(doc_id).update(sellerDoc).then(function() {
-                    $('#savedMsgBox').modal('show');
+                    if (document.getElementById('restImgUpload').files.length > 0) {
+                        var path_filename = 'seller_images/' + doc_id + '.jpg';
+                        var imageElement = document.getElementById("restImgUpload");
+                        var imageToUpload = imageElement.files[0];
+                        var storageRef = firebase.storage().ref();
+                        var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                        imageUploadTask.on('state_changed', function(snapshot) {
+                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            console.log('Upload is ' + progress + '% done');
+                            switch (snapshot.state) {
+                                case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                    console.log('Upload is paused');
+                                    break;
+                                case firebase.storage.TaskState.RUNNING: // or 'running'
+                                    console.log('Upload is running');
+                                    break;
+                            }
+                        }, function(error) {
+                            console.log('Upload is unsuccessful.');
+                        }, function() {
+                            $('#savedMsgBox').modal('show');
+                        });
+                    } else {
+                        $('#savedMsgBox').modal('show');
+                    }
+
                 })
                 .catch(function(error) {
                     console.error("Error updating seller record: ", error);
@@ -712,11 +751,36 @@
         }
     </script>
     <script>
+        function toggleRestOnline() {
+            var db = firebase.firestore();
+            var user = firebase.auth().currentUser;
+            db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                queryResult.forEach(function(doc) {
+                    if (doc.data().online) {
+                        db.collection("sellers").doc(doc_id).update({
+                            online: false
+                        }).then(function() {
+                            $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                            $('#restOnline').html('Closed');
+                        });
+                    } else {
+                        db.collection("sellers").doc(doc_id).update({
+                            online: true
+                        }).then(function() {
+                            $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                            $('#restOnline').html('Open');
+                        });
+                    }
+                });
+            });
+        }
+    </script>
+    <script>
         var logoutBtn = document.getElementById('logout');
         logoutBtn.onclick = function() {
             firebase.auth().signOut().then(function() {
-                window.location.replace("login.html");
-            })
+                //window.location.replace("login.html");
+            });
         }
     </script>
 </body>

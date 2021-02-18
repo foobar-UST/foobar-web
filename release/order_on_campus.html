@@ -40,6 +40,7 @@
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         // Your web app's Firebase configuration
         // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -70,16 +71,14 @@
         function initApp() {
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
-                    // User is signed in.
-                    let sellerInfo = {
-                        displayName: user.displayName || null,
-                        email: user.email,
-                        emailVerified: user.emailVerified,
-                        photoURL: user.photoURL || "#",
-                        uid: user.uid,
-                        phoneNumber: user.phoneNumber || null,
-                        providerData: user.providerData || null,
-                    };
+                    let seller = {
+                            seller_id: null,
+                            isOnline: null,
+                            name: null,
+                            type: null,
+                            obj: null
+                        }
+                        // User is signed in.
                     db.collection("sellers").where("by_user_id", "==", user.uid)
                         .get()
                         .then(function(querySnapshot) {
@@ -87,10 +86,14 @@
                                 console.log("SELLER LINK ERROR");
                             } else {
                                 querySnapshot.forEach(function(doc) {
-                                    sellerInfo.obj = doc.data() || {};
-                                    document.getElementById("emailAddrSideBar").innerText = sellerInfo.obj.name;
-                                    document.getElementById("emailAddrTopNav").innerText = sellerInfo.obj.name;
-                                    if (doc.data().online) {
+                                    seller.obj = doc.data() || {};
+                                    seller.seller_id = doc.data().id;
+                                    seller.isOnline = doc.data().online;
+                                    seller.name = doc.data().name;
+                                    seller.type = doc.data().type;
+                                    document.getElementById("emailAddrSideBar").innerText = seller.name;
+                                    document.getElementById("emailAddrTopNav").innerText = seller.name;
+                                    if (seller.isOnline) {
                                         $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
                                         $('#restOnline').html('Open');
                                     } else {
@@ -98,7 +101,7 @@
                                         $('#restOnline').html('Closed');
                                     }
                                 });
-                                window.sellerInfo = sellerInfo;
+                                window.sellerInfo = seller;
                                 initPage();
                             }
                         })
@@ -114,40 +117,88 @@
             });
         };
 
-        let catalog_list = {};
-        let selected = null;
+        function addOrderCard(order_doc_id) {
+            var order = {
+                id: null,
+                identifier: null,
+                order_items: null,
+                state: null,
+                placed_by: null
+            }
+            let db = firebase.firestore();
+            db.collection("orders").where("id", "==", order_doc_id).get().then(function(query) {
+                query.forEach(function(doc) {
+                    order.id = doc.data().id;
+                    order.identifier = doc.data().identifier;
+                    order.order_items = doc.data().order_items;
+                    order.state = doc.data().state;
+                    order.message = doc.data().message;
+                    db.collection("users_public").where("id", "==", doc.data().user_id).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            order.placed_by = doc.data().username;
+                            var orderContent = `
+                    <div class="card card-primary">
+                        <div class="card-header" style="background-color: #765D69;">
+                            <h3 class="card-title"><strong>` + order.state + `</strong> - Order #` + order.identifier + `</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                            </div>
+                        </div>
+                        <div class="card-body" style="display: block;">
+                            <h4 style="text-align: center;">#<span style="color: #765D69; font-size: 38px">` + order.identifier + `</span></h4>
+                            <table class="table table-borderless">
+                                    <tr>
+                                        <td><strong>Created by:</strong></td>
+                                        <td>` + order.placed_by + `</td>
+                                    </tr>` + (order.message ? '<tr><td><strong>Message:</td><td>' + order.message : '') + `     
+                            </table>
+                            <hr>
+                            <h4 style="text-align: center; font-weight:bold;">Order Summary</h4>
+                            <table class="table table-striped" style="table-layout: fixed; width: 100%" id="` + order.identifier + `">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" style="width: 60%;">Item</th>
+                                        <th scope="col" style="width: 20%; text-align:center;">Pcs.</th>
+                                        <th scope="col" style="width: 20%; text-align:center;">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    </tbody>
+                                </table>
+                            <hr>
+                            <table>
+                                <tr><td style="width: 50%;"><button type="button" class="btn btn-block btn-success changeOrderState" id="` + order.identifier + `-` + order.id + `">Prepare</button></td>
+                                    <td style="width: 50%;"><button type="button" class="btn btn-block btn-danger cancelOrder" id="` + order.identifier + `-` + order.id + `">Cancel</button></td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>`;
+                            console.log(doc.data().order_items);
+                            // Some rows already exist
+                            if ($("#orderList .row:last-child .col-md-3").length < 4) {
+                                // Still has some place to add a new box
+                                console.log($("#orderList .row:last-child .col-md-3").length);
+                                $("#orderList .row:last-child").append("<div class='col-md-3'>" + orderContent + "</div>");
+                                //$("#orderDisplay").append("<tr><td>" + orderContent + "</td></tr>");
+                                for (var i = 0; i < order.order_items.length; i++) {
+                                    let element = "#" + order.identifier;
+                                    let row = `<tr><td scope="row" style="word-wrap: break-word">` + order.order_items[i].item_title + ` (` + order.order_items[i].item_title_zh + `)</td><td style="text-align:center;">` + order.order_items[i].amounts + `</td><td style="text-align:center;">$` + order.order_items[i].total_price + `</td></tr>`;
+                                    $(element).find("tbody").append(row);
+                                }
+                            } else {
+                                // add a new row
+                                $("#orderList").append("<div class='row'><div class='col-md-3'>" + orderContent + "</div></div>");
+                                for (var i = 0; i < order.order_items.length; i++) {
+                                    let element = "#" + order.identifier;
+                                    let row = `<tr><td scope="row" style="word-wrap: break-word">` + order.order_items[i].item_title + ` (` + order.order_items[i].item_title_zh + `)</td><td style="text-align:center;">` + order.order_items[i].amounts + `</td><td style="text-align:center;">$` + order.order_items[i].total_price + `</td></tr>`;
+                                    $(element).find("tbody").append(row);
+                                }
+                            }
+                        })
+                    })
 
-        function initCatList() {
-            let currentUser = window.sellerInfo;
-            let catTable = document.getElementById("cat-list");
-            catTable.innerHTML = "";
-            db.collection("sellers").doc(currentUser.obj.id).collection("catalogs")
-                .get()
-                .then(function(querySnapshot) {
-                    if (querySnapshot.empty) {
-                        console.log("NO DATA");
-                    } else {
-                        querySnapshot.forEach(function(doc) {
-                            let currentCat = doc.data();
-                            catalog_list[currentCat.id] = [currentCat.title, currentCat.title_zh];
-                            let newRow = catTable.insertRow();
-                            newRow.id = currentCat.id
-
-                            //let cellId = newRow.insertCell();
-                            //cellId.innerHTML = currentCat.id;
-
-                            let cellTitleENG = newRow.insertCell();
-                            cellTitleENG.innerHTML = currentCat.title;
-
-                            let cellTitleCH = newRow.insertCell();
-                            cellTitleCH.innerHTML = currentCat.title_zh;
-                        });
-                        initFoodItemBox();
-                    }
                 })
-                .catch(function(error) {
-                    console.log("Error getting documents: ", error);
-                });
+            });
         }
 
         function initFoodItemBox() {
@@ -268,7 +319,26 @@
         }
 
         function initPage() {
-            initCatList();
+            seller = window.sellerInfo;
+            if (seller.isOnline == true) {
+                $("#restNotOnline").hide();
+                console.log("Rest is Online");
+            }
+            let db = firebase.firestore();
+            db.collection("sellers").where("id", "==", seller.seller_id).get().then(function(query) {
+                query.forEach(function(doc) {
+                    db.collection("orders").where("seller_id", "==", seller.seller_id).orderBy("updated_at").onSnapshot((snapshot) => {
+                        snapshot.docChanges().forEach((change) => {
+                            console.log(change.doc.data().id, 'is', change.doc.data().state);
+                            console.log('change.doc.data().state != "delivered"', 'is', change.doc.data().state != "delivered");
+                            if (change.type === "added" && (change.doc.data().state != "delivered" || change.doc.data().state != "cancelled")) {
+                                console.log('add', change.doc.data().id);
+                                addOrderCard(change.doc.data().id);
+                            }
+                        })
+                    })
+                })
+            })
         }
 
         window.addEventListener('load', initApp());
@@ -445,6 +515,59 @@
             Loading, please wait...
         </div>
     </div>
+    <!-- cancelledOrder Successful Modal -->
+    <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderCancelledFail">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Order Cancellation Failed.</h5>
+                </div>
+                <div class="modal-body">
+                    <p>An error occurred while processing the cancellation request. Please contact Foobar++ development team.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- cancelledOrder Successful Modal -->
+    <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderCancelled">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Order is cancelled</h5>
+                </div>
+                <div class="modal-body">
+                    <p>The order is cancelled. A notification has been sent to the user making the order.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- confirmCancelOrder Modal -->
+    <div class="modal fade" id="confirmCancelOrder" data-backdrop="static" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Cancel Order #<span id="cancelOrderID"></span></h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to cancel this order?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Return</button>
+                    <button type="button" class="btn btn-danger" onclick="cancelOrder()">Cancel</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="wrapper">
 
         <!-- Navbar -->
@@ -471,8 +594,8 @@
                     <input class="form-control form-control-navbar" type="search" placeholder="Search items" aria-label="Search">
                     <div class="input-group-append">
                         <button class="btn btn-navbar" type="submit">
-              <i class="fas fa-search"></i>
-            </button>
+                            <i class="fas fa-search"></i>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -623,7 +746,7 @@
                 <div class="container-fluid">
                     <div class="row mb-2">
                         <div class="col-sm-6">
-                            <h1 class="m-0 text-dark">Menu Contents</h1>
+                            <h1 class="m-0 text-dark">Active Orders</h1>
                         </div>
                         <!-- /.col -->
                         <div class="col-sm-6">
@@ -631,7 +754,7 @@
                                 <li id="emailAddrTopNav" class="breadcrumb-item">
                                     <a href="#"></a>
                                 </li>
-                                <li class="breadcrumb-item active">Menu Contents</li>
+                                <li class="breadcrumb-item active">Active Orders</li>
                             </ol>
                         </div>
                         <!-- /.col -->
@@ -644,95 +767,35 @@
 
             <!-- Main content -->
             <section class="content">
-                <div class="container-fluid">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="card">
-                                <div class="card-header">
-                                    <h3 class="card-title">Food Categories</h3>
-                                </div>
-                                <div class="card-body">
-                                    <table class="table table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Title</th>
-                                                <th></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody id="cat-list">
-                                        </tbody>
-                                    </table>
-                                </div>
-                                <div class="card-footer">
-                                    <button type="button" class="btn btn-success" data-toggle="modal" data-target="#addCategory"><i
-                      class="fa fa-plus"></i> Add category</a>
+                <div class="alert alert-warning alert-dismissible" id="restNotOnline">
+                    <button type="button" class="close" data-dismiss="alert" aria-hidden="true">×</button>
+                    <h5><i class="icon fas fa-exclamation-triangle"></i> Alert!</h5>
+                    Warning alert preview. This alert is dismissable.
                 </div>
-                <div class="modal fade" id="addCategory" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-                  aria-hidden="true">
-                  <div class="modal-dialog" role="document">
-                    <div class="modal-content">
-                      <div class="modal-header">
-                        <h5 class="modal-title" id="exampleModalLabel">Add category</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                          <span aria-hidden="true">&times;</span>
-                        </button>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="form-group">
-                                        <label>Food category ID:</label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" placeholder="Leave blank for automatic ID creation" id="catForm-id">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Category name: <span style="color:red;">(Required)</span></label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" id="catForm-name">
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Category name (ZH): <span style="color:red;">(Required)</span></label>
-                                        <div class="input-group">
-                                            <input type="text" class="form-control" id="catForm-name-ch">
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <p id="inputFormError" style="display: none; color: red;">Please check your input!</p>
-                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                                    <button type="button" class="btn btn-primary" onclick="addCategory()">Add category</button>
-                                </div>
-                            </div>
+                <div class="container-fluid">
+                    <h5 class="mb-2">List of active orders</h5>
+                    <div class="container-fluid" id="orderList">
+                        <div class="row">
+
                         </div>
                     </div>
                 </div>
+            </section>
+            <!-- /.content -->
         </div>
-        <div class="col-md-6">
-            <div class="card">
-                <div class="card-header">
-                    <h3 class="card-title">Categories with Food Items</h3>
-                </div>
-                <div class="card-body" id="cat-food-table">
-                </div>
+        <!-- /.content-wrapper -->
+        <footer class="main-footer">
+            <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+            <div class="float-right d-none d-sm-inline-block">
+                <b>Version</b> 3.0.5
             </div>
-        </div>
-        <!-- /.container-fluid -->
-        </section>
-        <!-- /.content -->
-    </div>
-    <!-- /.content-wrapper -->
-    <footer class="main-footer">
-        <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
-        <div class="float-right d-none d-sm-inline-block">
-            <b>Version</b> 3.0.5
-        </div>
-    </footer>
+        </footer>
 
-    <!-- Control Sidebar -->
-    <aside class="control-sidebar control-sidebar-dark">
-        <!-- Control sidebar content goes here -->
-    </aside>
-    <!-- /.control-sidebar -->
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+        </aside>
+        <!-- /.control-sidebar -->
     </div>
     <!-- ./wrapper -->
     <script>
@@ -742,6 +805,61 @@
                 window.location.replace("login.html");
             })
         }
+    </script>
+    <script>
+        function cancelOrder() {
+            console.log('received cancel order ID:', window.cancelOrderID);
+            $('#confirmCancelOrder').modal('hide');
+            /*
+            let api_url = "https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update";
+            let data = {
+                "order_id": window.cancelOrderID,
+                "order_state": "cancelled"
+            };
+            let header = {
+                'Content-Type': 'application/json',
+                'Authorization': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjYxMDgzMDRiYWRmNDc1MWIyMWUwNDQwNTQyMDZhNDFkOGZmMWNiYTgiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZm9vYmFyLWdyb3VwLWRlbGl2ZXJ5LWFwcCIsImF1ZCI6ImZvb2Jhci1ncm91cC1kZWxpdmVyeS1hcHAiLCJhdXRoX3RpbWUiOjE2MTM2NDE3NTEsInVzZXJfaWQiOiJ4QTR0YWI1QkswYWtzRkx0UVJMM25NemtuRWMyIiwic3ViIjoieEE0dGFiNUJLMGFrc0ZMdFFSTDNuTXprbkVjMiIsImlhdCI6MTYxMzY0MTc1MSwiZXhwIjoxNjEzNjQ1MzUxLCJlbWFpbCI6Im1jZEBmb29iYXJwcC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibWNkQGZvb2JhcnBwLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.CwGpblMH30BYesZHcYuwSmp_zq_XKxn7P-nNcYZV6vW1QB4NJt5uyr-Do30NlUwK6JaU43oPDIUE0DloGwyH3pyZ0j2zaZHXbIRJBh3OPStA45OfWuBOEgnqM84oAATbU5fS_RjyOAvdaaCwMf8w8xN0v7eM0plIUVOFhg6PJB2IPKHg9pAeVscdXyOgkTQQNOxeoe8Sb5rllgBeJ6HqpwBIdjcnmWuGrQTjrDhba4k-7mFJJXtylImamtYg2ioifUGagJQk1D5De7J7GR533niEcrCbXTpqpXxt5WBmGKyxRCD1ZYGLF7dwkaEXS1kV7ScY0cRSccGPn2Buk9KPnQ'
+            }
+            axios.post(api_url, data, {
+                header
+            }).then(function(response) {
+                $('#orderCancelled').modal('show');
+                console.log(response);
+            }).catch(function(error) {
+                $('#orderCancelledFail').modal('show');
+                console.error(error);
+            });*/
+            let token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjYxMDgzMDRiYWRmNDc1MWIyMWUwNDQwNTQyMDZhNDFkOGZmMWNiYTgiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZm9vYmFyLWdyb3VwLWRlbGl2ZXJ5LWFwcCIsImF1ZCI6ImZvb2Jhci1ncm91cC1kZWxpdmVyeS1hcHAiLCJhdXRoX3RpbWUiOjE2MTM2NDE3NTEsInVzZXJfaWQiOiJ4QTR0YWI1QkswYWtzRkx0UVJMM25NemtuRWMyIiwic3ViIjoieEE0dGFiNUJLMGFrc0ZMdFFSTDNuTXprbkVjMiIsImlhdCI6MTYxMzY0MTc1MSwiZXhwIjoxNjEzNjQ1MzUxLCJlbWFpbCI6Im1jZEBmb29iYXJwcC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibWNkQGZvb2JhcnBwLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.CwGpblMH30BYesZHcYuwSmp_zq_XKxn7P-nNcYZV6vW1QB4NJt5uyr-Do30NlUwK6JaU43oPDIUE0DloGwyH3pyZ0j2zaZHXbIRJBh3OPStA45OfWuBOEgnqM84oAATbU5fS_RjyOAvdaaCwMf8w8xN0v7eM0plIUVOFhg6PJB2IPKHg9pAeVscdXyOgkTQQNOxeoe8Sb5rllgBeJ6HqpwBIdjcnmWuGrQTjrDhba4k-7mFJJXtylImamtYg2ioifUGagJQk1D5De7J7GR533niEcrCbXTpqpXxt5WBmGKyxRCD1ZYGLF7dwkaEXS1kV7ScY0cRSccGPn2Buk9KPnQ';
+            let header = {
+                'Authorization': `${token}`,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            };
+            console.log(header);
+            axios({
+                method: 'post',
+                url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update',
+                data: {
+                    'order_id': window.cancelOrderID,
+                    'order_state': 'cancelled'
+                },
+                headers: header,
+                withCredentials: false
+            }).then(function(response) {
+                $('#orderCancelled').modal('show');
+                console.log(response);
+            }).catch(function(error) {
+                $('#orderCancelledFail').modal('show');
+                console.error(error.response.data);
+            });
+        }
+        $("body").on("click", ".cancelOrder", function() {
+            window.orderIdentifier = this.id.slice(0, 5)
+            window.cancelOrderID = this.id.slice(6);
+            console.log(window.cancelOrderID);
+            $("#cancelOrderID").text(window.orderIdentifier);
+            $('#confirmCancelOrder').modal('show');
+        })
     </script>
     <script>
         function toggleRestOnline() {
