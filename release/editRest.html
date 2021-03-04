@@ -587,6 +587,59 @@
                                     </div>
                                 </div>
                             </div>
+                            <div class="card card-warning">
+                                <div class="card-header">
+                                    <h3 class="card-title">Restaurant Advertise</h3>
+                                </div>
+                                <div class="card-body">
+                                    <label>Advertise Title (English):</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-ad"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restAdTitle">
+                                        </div>
+                                    </div>
+                                    <label>Advertise Title (Chinese):</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-ad"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restAdTitleChi">
+                                        </div>
+                                    </div>
+                                    <label>Advertise Link:</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-link"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restAdUrl">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Advertise Description (English):</label>
+                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 100px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="restAdDesc"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Advertise Description (Chinese):</label>
+                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 100px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="restAdDescChi"></textarea>
+                                    </div>
+                                    <!-- /.form group -->
+                                    <div class="form-group">
+                                        <label>Advertise Image:</label>
+                                        <img id="restAdImg" class="img-fluid">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Upload new Advertise image:</label>
+                                        <div class="input-group">
+                                            <input type="file" accept="image/*" id="restAdImgUpload">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -679,6 +732,16 @@
                                 }
                             })
                         });
+                        db.collection("sellers").doc(doc_id).collection('advertises').doc('0').get().then(function(doc) {
+                            if (doc.exists) {
+                                document.getElementById('restAdTitle').value = doc.data().title;
+                                document.getElementById('restAdTitleChi').value = doc.data().title_zh;
+                                document.getElementById('restAdDesc').value = doc.data().content;
+                                document.getElementById('restAdDescChi').value = doc.data().content_zh;
+                                document.getElementById('restAdImg').src = doc.data().image_url;
+                                document.getElementById('restAdUrl').value = doc.data().url;
+                            }
+                        })
                         $('.duallistbox').bootstrapDualListbox();
                     });
                 });
@@ -716,7 +779,29 @@
                 opening_hours: _openHours,
                 tags: _tags,
             }
+            var _restAdTitle = $('#restAdTitle').val();
+            var _restAdTitleChi = $('#restAdTitleChi').val();
+            var _restAdDesc = $('#restAdDesc').val();
+            var _restAdDescChi = $('#restAdDescChi').val();
+            var _restAdUrl = $('#restAdUrl').val();
+            var adDoc = {
+                title: _restAdTitle,
+                title_zh: _restAdTitleChi,
+                content: _restAdDesc,
+                content_zh: _restAdDescChi,
+                url: _restAdUrl,
+                seller_id: doc_id,
+                created_at: firebase.firestore.FieldValue.serverTimestamp(),
+            }
+            db.collection("sellers").doc(doc_id).collection('advertises').doc('0').get().then(function(doc) {
+                if (doc.exists) {
+                    db.collection("sellers").doc(doc_id).collection('advertises').doc('0').update(adDoc);
+                } else {
+                    db.collection("sellers").doc(doc_id).collection('advertises').doc('0').add(adDoc);
+                }
+            });
             db.collection("sellers").doc(doc_id).update(sellerDoc).then(function() {
+                if (document.getElementById('restImgUpload').files.length + document.getElementById('restAdImgUpload').files.length > 0) {
                     if (document.getElementById('restImgUpload').files.length > 0) {
                         var path_filename = 'seller_images/' + doc_id + '.jpg';
                         var imageElement = document.getElementById("restImgUpload");
@@ -740,14 +825,38 @@
                         }, function() {
                             $('#savedMsgBox').modal('show');
                         });
-                    } else {
-                        $('#savedMsgBox').modal('show');
                     }
-
-                })
-                .catch(function(error) {
-                    console.error("Error updating seller record: ", error);
-                });
+                    if (document.getElementById('restAdImgUpload').files.length > 0) {
+                        var path_filename = 'advertise_images/' + doc_id + '.jpg';
+                        var imageElement = document.getElementById("restAdImgUpload");
+                        var imageToUpload = imageElement.files[0];
+                        var storageRef = firebase.storage().ref();
+                        var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                        imageUploadTask.on('state_changed', function(snapshot) {
+                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            console.log('Upload is ' + progress + '% done');
+                            switch (snapshot.state) {
+                                case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                    console.log('Upload is paused');
+                                    break;
+                                case firebase.storage.TaskState.RUNNING: // or 'running'
+                                    console.log('Upload is running');
+                                    break;
+                            }
+                        }, function(error) {
+                            console.log('Upload is unsuccessful.');
+                        }, function() {
+                            $('#savedMsgBox').modal('show');
+                        });
+                    }
+                } else {
+                    $('#savedMsgBox').modal('show');
+                }
+            })
+            .catch(function(error) {
+                console.error("Error updating seller record: ", error);
+            });
         }
     </script>
     <script>
