@@ -516,12 +516,13 @@
                                     <div class="form-group">
                                         <label>Restaurant Category (can choose more than one):</label>
                                         <select class="duallistbox" multiple="multiple" id='restTags'>
-                                            <option >Chinese</option>
-                                            <option>Japanese</option>
-                                            <option>Korean</option>
-                                            <option>Western</option>
-                                            <option>American</option>
-                                            <option>European</option>
+                                            <option>chinese</option>
+                                            <option>japanese</option>
+                                            <option>korean</option>
+                                            <option>western</option>
+                                            <option>american</option>
+                                            <option>european</option>
+                                            <option>indian</option>
                                         </select>
                                     </div>
                                 </div>
@@ -626,7 +627,7 @@
                                             <div class="input-group-prepend">
                                                 <span class="input-group-text"><i class="fas fa-link"></i></span>
                                             </div>
-                                            <input type="text" class="form-control" data-mask id="restAdUrl">
+                                            <input type="text" class="form-control" data-mask id="restAdUrl" readonly>
                                         </div>
                                     </div>
                                     <div class="row">
@@ -727,7 +728,7 @@
                             document.getElementById('deliveryCost').value = doc.data().delivery_cost;
                         } else {
                             document.getElementById('restType').placeholder = "On-campus";
-                            document.getElementById('deliveryCost').value = doc.data().delivery_cost;
+                            document.getElementById('deliveryCost').value = 0;
                             $("#deliveryCost").attr('readonly', 'readonly');
                         }
                         document.getElementById('restNotice').value = doc.data().notice;
@@ -798,13 +799,13 @@
             var _restAdTitleChi = $('#restAdTitleChi').val();
             var _restAdDesc = $('#restAdDesc').val();
             var _restAdDescChi = $('#restAdDescChi').val();
-            var _restAdUrl = $('#restAdUrl').val();
+            //var _restAdUrl = $('#restAdUrl').val();
             var adDoc = {
                 title: _restAdTitle,
                 title_zh: _restAdTitleChi,
                 content: _restAdDesc,
                 content_zh: _restAdDescChi,
-                url: _restAdUrl,
+                url: 'https://foobar-group-delivery-app.web.app/viewAd.html?restID=' + doc_id,
                 seller_id: doc_id,
                 created_at: firebase.firestore.FieldValue.serverTimestamp(),
             }
@@ -816,62 +817,62 @@
                 }
             });
             db.collection("sellers").doc(doc_id).update(sellerDoc).then(function() {
-                if (document.getElementById('restImgUpload').files.length + document.getElementById('restAdImgUpload').files.length > 0) {
-                    if (document.getElementById('restImgUpload').files.length > 0) {
-                        var path_filename = 'seller_images/' + doc_id + '.jpg';
-                        var imageElement = document.getElementById("restImgUpload");
-                        var imageToUpload = imageElement.files[0];
-                        var storageRef = firebase.storage().ref();
-                        var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
-                        imageUploadTask.on('state_changed', function(snapshot) {
-                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
-                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            console.log('Upload is ' + progress + '% done');
-                            switch (snapshot.state) {
-                                case firebase.storage.TaskState.PAUSED: // or 'paused'
-                                    console.log('Upload is paused');
-                                    break;
-                                case firebase.storage.TaskState.RUNNING: // or 'running'
-                                    console.log('Upload is running');
-                                    break;
-                            }
-                        }, function(error) {
-                            console.log('Upload is unsuccessful.');
-                        }, function() {
-                            $('#savedMsgBox').modal('show');
-                        });
+                    if (document.getElementById('restImgUpload').files.length + document.getElementById('restAdImgUpload').files.length > 0) {
+                        if (document.getElementById('restImgUpload').files.length > 0) {
+                            var path_filename = 'seller_images/' + doc_id + '.jpg';
+                            var imageElement = document.getElementById("restImgUpload");
+                            var imageToUpload = imageElement.files[0];
+                            var storageRef = firebase.storage().ref();
+                            var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                            imageUploadTask.on('state_changed', function(snapshot) {
+                                console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                                var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                console.log('Upload is ' + progress + '% done');
+                                switch (snapshot.state) {
+                                    case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                        console.log('Upload is paused');
+                                        break;
+                                    case firebase.storage.TaskState.RUNNING: // or 'running'
+                                        console.log('Upload is running');
+                                        break;
+                                }
+                            }, function(error) {
+                                console.log('Upload is unsuccessful.');
+                            }, function() {
+                                $('#savedMsgBox').modal('show');
+                            });
+                        }
+                        if (document.getElementById('restAdImgUpload').files.length > 0) {
+                            var path_filename = 'advertise_images/' + doc_id + '.jpg';
+                            var imageElement = document.getElementById("restAdImgUpload");
+                            var imageToUpload = imageElement.files[0];
+                            var storageRef = firebase.storage().ref();
+                            var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                            imageUploadTask.on('state_changed', function(snapshot) {
+                                console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                                var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                console.log('Upload is ' + progress + '% done');
+                                switch (snapshot.state) {
+                                    case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                        console.log('Upload is paused');
+                                        break;
+                                    case firebase.storage.TaskState.RUNNING: // or 'running'
+                                        console.log('Upload is running');
+                                        break;
+                                }
+                            }, function(error) {
+                                console.log('Upload is unsuccessful.');
+                            }, function() {
+                                $('#savedMsgBox').modal('show');
+                            });
+                        }
+                    } else {
+                        $('#savedMsgBox').modal('show');
                     }
-                    if (document.getElementById('restAdImgUpload').files.length > 0) {
-                        var path_filename = 'advertise_images/' + doc_id + '.jpg';
-                        var imageElement = document.getElementById("restAdImgUpload");
-                        var imageToUpload = imageElement.files[0];
-                        var storageRef = firebase.storage().ref();
-                        var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
-                        imageUploadTask.on('state_changed', function(snapshot) {
-                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
-                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                            console.log('Upload is ' + progress + '% done');
-                            switch (snapshot.state) {
-                                case firebase.storage.TaskState.PAUSED: // or 'paused'
-                                    console.log('Upload is paused');
-                                    break;
-                                case firebase.storage.TaskState.RUNNING: // or 'running'
-                                    console.log('Upload is running');
-                                    break;
-                            }
-                        }, function(error) {
-                            console.log('Upload is unsuccessful.');
-                        }, function() {
-                            $('#savedMsgBox').modal('show');
-                        });
-                    }
-                } else {
-                    $('#savedMsgBox').modal('show');
-                }
-            })
-            .catch(function(error) {
-                console.error("Error updating seller record: ", error);
-            });
+                })
+                .catch(function(error) {
+                    console.error("Error updating seller record: ", error);
+                });
         }
     </script>
     <script>
