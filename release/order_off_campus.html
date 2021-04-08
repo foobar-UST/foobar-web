@@ -241,6 +241,10 @@
                 isDisabled = "disabled";
                 isShipped = "Shipped";
             }
+            if (section.state == "2_preparing") {
+                isDisabled = "disabled";
+                isShipped = "Preparing";
+            }
             row.className = 'row';
             row.innerHTML = `<div class="col-md-12">
                         <div class="card ` + cardColor + `" id="` + section.id + `_cardColor">
@@ -449,7 +453,6 @@
                     db.collection("sellers").doc(doc.data().id).collection('sections').orderBy("cutoff_time").get().then((querySnapshot) => {
                         querySnapshot.forEach(function(section) {
                             console.log(section.data().id, 'is', section.data().state);
-                            console.log(section.data());
                             createSectionCard(section.data());
                         });
                     })
@@ -459,8 +462,38 @@
 
         function prepInsert(newTimeslot, sectionId) {
             let header = document.getElementById('editOrAddModal_title');
+            let errorText = document.getElementById("addItemError");
+            errorText.style.display = "none";
             if (newTimeslot === true) {
                 header.innerHTML = "New Timeslot";
+
+                let insertTitle = document.getElementById('update-name');
+                insertTitle.value = "";
+
+                let insertTitleCH = document.getElementById('update-name-ch');
+                insertTitleCH.value = "";
+
+                let insertDescrip = document.getElementById('update-descrip');
+                insertDescrip.value = "";
+
+                let insertDescripCH = document.getElementById('update-descrip-ch');
+                insertDescripCH.value = "";
+
+                let insertPrice = document.getElementById('update-delivery-cost');
+                insertPrice.value = "";
+
+                let insertMaxUsers = document.getElementById('update-max-order');
+                insertMaxUsers.value = "";
+
+                let insertLocation = document.getElementById('update-location');
+                insertLocation.value = 'atrium';
+
+                let insertDTime = document.getElementById('update-delivery-time');
+                insertDTime.value = ""
+
+                let insertCOTime = document.getElementById('update-cutofftime');
+                insertCOTime.value = ""
+
                 return;
             }
             let db = firebase.firestore();
@@ -468,7 +501,6 @@
             let section;
             db.collection("sellers").doc(currentUser.obj.id).collection('sections').doc(sectionId).get().then((section) => {
                 section = section.data();
-                console.log(section);
                 header.innerHTML = sectionId;
                 let insertTitle = document.getElementById('update-name');
                 insertTitle.value = section.title;
