@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Foobar++ | Login</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <!-- icheck bootstrap -->
+    <link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="dist/css/adminlte.min.css">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <!-- Select2 -->
+    <link rel="stylesheet" href="../../plugins/select2/css/select2.min.css">
+    <link rel="stylesheet" href="../../plugins/select2-bootstrap4-theme/select2-bootstrap4.min.css">
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-app.js"></script>
+    <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
+    <!-- Bootstrap4 Duallistbox -->
+    <link rel="stylesheet" href="plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css">
+    <!-- Add Firebase products that you want to use -->
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-storage.js"></script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB19RcL0RqpaMTJXEyzQ7sXoeP1tyKtPNM&callback=initMap&libraries=&v=weekly" defer></script>
+    <script src="js/firebase.config.js"></script>
+    <script>
+        let map;
+
+        function initMap() {
+            map = new google.maps.Map(document.getElementById("mapTest"), {
+                center: new google.maps.LatLng(-34.397, 150.644),
+                zoom: 8,
+            });
+        }
+    </script>
+</head>
+
+<body class="hold-transition login-page" onload="checkHasRest()">
+    <div class="login-box" style="width: 50%; margin-top:10%;">
+        <div class="login-logo">
+            <a>Foobar++</a>
+            <p>Create Your Restaurant!</p>
+        </div>
+        <!-- /.login-logo -->
+        <div class="card">
+            <div class="card-body login-card-body">
+                <p class="login-box-msg">To use our service, you must first create your own restaurant.</p>
+                <p class="login-box-msg">Don't worry, you can still change your restaurant details after creating one.
+                </p>
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card-info">
+                                <div class="card-header">
+                                    <h3 class="card-title">Restaurant Information</h3>
+                                </div>
+                                <div class="card-body">
+                                    <label>Restaurant Type:</label>
+                                    <div class="form-group">
+                                        <select class="form-control select2" style="width: 100%;" id="restType">
+                                            <option selected="selected">On-campus</option>
+                                            <option>Off-campus</option>
+                                        </select>
+                                    </div>
+                                    <label>Restaurant Name (English):</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-utensils"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restNameEng">
+                                        </div>
+                                    </div>
+                                    <label>Restaurant Name (Chinese) (Optional):</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-utensils"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restNameChi">
+                                        </div>
+                                    </div>
+                                    <label>Website (Optional):</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-utensils"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restURL">
+                                        </div>
+                                    </div>
+                                    <label>Opening and Closing Time:</label>
+                                    <div class="form-group">
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fas fa-clock"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" placeholder="e.g. Mon-Sun: 10:00 a.m. to 6:00 p.m." data-mask id="openHours">
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label>Minimum Spending (HKD):</label>
+                                        <div class="input-group date" id="timepicker" data-target-input="nearest">
+                                            <input type="text" class="form-control" id="minSpend" />
+                                        </div>
+                                        <!-- /.input group -->
+                                    </div>
+                                    <!-- /.form group -->
+                                    <div class="form-group">
+                                        <label>Restaurant Category (can choose more than one):</label>
+                                        <select class="duallistbox" multiple="multiple" id='restTags'>
+                                            <option>chinese</option>
+                                            <option>japanese</option>
+                                            <option>korean</option>
+                                            <option>western</option>
+                                            <option>american</option>
+                                            <option>european</option>
+                                            <option>indian</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Restaurant English Description:</label>
+                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="engDesc"></textarea>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Restaurant Chinese Description: (Optional)</label>
+                                        <textarea class="textarea" placeholder="Place some text here" style="width: 100%; height: 200px; font-size: 14px; line-height: 18px; border: 1px solid #dddddd; padding: 10px;" id="chiDesc"></textarea>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="card card-success">
+                                <div class="card-header">
+                                    <h3 class="card-title">Restaurant particulars</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="form-group">
+                                        <label>Restaurant email:</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-user"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restEmail" readonly>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Phone number:</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="phoneNum" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Address (English):</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restAddr" />
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Address (Chinese):</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <span class="input-group-text"><i class="fa fa-phone"></i></span>
+                                            </div>
+                                            <input type="text" class="form-control" data-mask id="restAddrZH" />
+                                        </div>
+                                    </div>
+                                    <!-- /.form group -->
+                                    <div class="form-group">
+                                        <label>Restaurant Image:</label>
+                                        <div class="input-group">
+                                            <input type="file" accept="image/*" id="restImg">
+                                        </div>
+                                    </div>
+                                    <div class="form-group" id="mapTest"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <!-- /.col -->
+
+                        <div class="col align-self-end">
+                            <button type="submit" class="btn btn-primary btn-block" onclick="submitRestData()" id="submitBtn">Submit</button>
+                        </div>
+                        <!-- /.col -->
+                    </div>
+                </div>
+                <!-- /.login-card-body -->
+            </div>
+        </div>
+        <!-- /.login-box -->
+        <!-- jQuery -->
+        <script src="plugins/jquery/jquery.min.js"></script>
+        <!-- Bootstrap 4 -->
+        <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <!-- AdminLTE App -->
+        <script src="dist/js/adminlte.min.js"></script>
+        <!-- Duallist Box-->
+        <script src="plugins/bootstrap4-duallistbox/jquery.bootstrap-duallistbox.min.js"></script>
+        <!-- Select2 -->
+        <script src="../../plugins/select2/js/select2.full.min.js"></script>
+        <script>
+            $(function() {
+                $('.duallistbox').bootstrapDualListbox();
+            })
+
+            function checkHasRest() {
+                firebase.auth().onAuthStateChanged(function(user) {
+                    if (user) {
+                        var db = firebase.firestore();
+                        db.collection("users").doc(user.uid).get().then(function(doc) {
+                            // if target user has a restaurant already
+                            if (doc.data().createdRest) {
+                                window.location.replace('index.html');
+                            } else {
+                                document.getElementById('restEmail').placeholder = user.email;
+                            }
+                        })
+                    } else {
+                        window.location.replace('login.html')
+                    }
+                });
+            }
+
+            function submitRestData() {
+                var _restNameEng = $('#restNameEng').val();
+                var _restNameChi = $('#restNameChi').val();
+                var _engDesc = $('#engDesc').val();
+                var _chiDesc = $('#chiDesc').val();
+                var _restURL = $('#restURL').val();
+                var _phone = $('#phoneNum').val();
+                // Need Google Maps SDK
+                var _location = null;
+                var _minSpend = Number($('#minSpend').val());
+                var _type = null;
+                if ($('#restType').val() == "On-campus") {
+                    _type = 0;
+                } else {
+                    _type = 1;
+                }
+                var _openHours = $('#openHours').val();
+                var _tags = $('#restTags').val();
+                var _restAddr = $('#restAddr').val();
+                var _restAddrZH = $('#restAddrZH').val();
+                var _user_id = firebase.auth().currentUser.uid;
+                console.log(sellerDoc);
+                var db = firebase.firestore();
+                var newSellerDoc = db.collection("sellers").doc();
+                var newSellerDocID = newSellerDoc.id;
+                var sellerDoc = {
+                    id: newSellerDocID,
+                    name: _restNameEng,
+                    name_zh: _restNameChi,
+                    description: _engDesc,
+                    description_zh: _chiDesc,
+                    website: _restURL,
+                    phone_num: _phone,
+                    location: {
+                        address: _restAddr,
+                        address_zh: _restAddrZH,
+                        geopoint: new firebase.firestore.GeoPoint(22.32, 114.17)
+                    },
+                    image_url: null,
+                    min_spend: _minSpend,
+                    delivery_cost: 0,
+                    order_rating: 0.0,
+                    delivery_rating: 0.0,
+                    rating_count: {
+                        excellent: 0,
+                        very_good: 0,
+                        good: 0,
+                        fair: 0,
+                        poor: 0
+                    },
+                    type: _type,
+                    online: false,
+                    notice: null,
+                    opening_hours: _openHours,
+                    tags: _tags,
+                    by_user_id: _user_id
+                }
+                newSellerDoc.set(sellerDoc).then(function() {
+                        console.log("Seller Document written at: ", newSellerDocID);
+                        db.collection("users").doc(_user_id).update({
+                            createdRest: true
+                        });
+                        var path_filename = 'seller_images/' + newSellerDocID;
+                        console.log(path_filename);
+                        var imgElement = document.getElementById("restImg");
+                        var imageToUpload = imgElement.files[0];
+                        var storageRef = firebase.storage().ref();
+                        var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                        imageUploadTask.on('state_changed', function(snapshot) {
+                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                            // Observe state change events such as progress, pause, and resume
+                            // Get task progress, including the number of bytes uploaded and the total number of bytes to be uploaded
+                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            console.log('Upload is ' + progress + '% done');
+                            switch (snapshot.state) {
+                                case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                    console.log('Upload is paused');
+                                    break;
+                                case firebase.storage.TaskState.RUNNING: // or 'running'
+                                    console.log('Upload is running');
+                                    break;
+                            }
+                        }, function(error) {
+                            // Handle unsuccessful uploads
+                            console.log('Upload is unsuccessful.');
+                        }, function() {
+                            // Handle successful uploads on complete
+                            // For instance, get the download URL: https://firebasestorage.googleapis.com/...
+                            window.location.replace('index.html');
+                        });
+
+                    })
+                    .catch(function(error) {
+                        console.error("Error inserting seller record: ", error);
+                    });
+            }
+        </script>
+</body>
+
+</html>

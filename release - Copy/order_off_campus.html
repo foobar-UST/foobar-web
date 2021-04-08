@@ -1,0 +1,1152 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Foobar++ | Admin Dashboard</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <!-- Tempusdominus Bbootstrap 4 -->
+    <link rel="stylesheet" href="plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- iCheck -->
+    <link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- JQVMap -->
+    <link rel="stylesheet" href="plugins/jqvmap/jqvmap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="dist/css/adminlte.css">
+    <!-- overlayScrollbars -->
+    <link rel="stylesheet" href="plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+    <!-- Daterange picker -->
+    <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css">
+    <!-- summernote -->
+    <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css">
+    <link rel="stylesheet" href="plugins/bootstrap4-duallistbox/bootstrap-duallistbox.min.css">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <!-- Firebase App (the core Firebase SDK) is always required and must be listed first -->
+    <!-- jQuery -->
+    <script src="plugins/jquery/jquery.min.js"></script>
+    <!-- jQuery UI 1.11.4 -->
+    <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js" integrity="sha512-UNM1njAgOFUa74Z0bADwAq8gbTcqZC8Ej4xPSzpnh0l6KMevwvkBvbldF9uR++qKeJ+MOZHRjV1HZjoRvjDfNQ==" crossorigin="anonymous"></script>
+    <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script>
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+        var firebaseConfig = {
+            apiKey: "AIzaSyAUe-NmpBDD3_Zs5di1brYXEmDO8J2yXbc",
+            authDomain: "foobar-group-delivery-app.firebaseapp.com",
+            databaseURL: "https://foobar-group-delivery-app.firebaseio.com",
+            projectId: "foobar-group-delivery-app",
+            storageBucket: "foobar-group-delivery-app.appspot.com",
+            messagingSenderId: "736111277135",
+            appId: "1:736111277135:web:88b9762a6a07d3d4bbe63a",
+            measurementId: "G-2TK10L2CB4"
+        };
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        var db = firebase.firestore();
+        firebase.analytics();
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.js"></script>
+    <link type="text/css" rel="stylesheet" href="https://www.gstatic.com/firebasejs/ui/4.6.1/firebase-ui-auth.css" />
+    <script type="text/javascript">
+        $(document).ready(function() {
+            setTimeout(function() {
+                $('#loading_wrap').fadeOut();
+            }, 1500);
+        });
+
+        function initApp() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    // User is signed in.
+                    let sellerInfo = {
+                        displayName: user.displayName || null,
+                        email: user.email,
+                        emailVerified: user.emailVerified,
+                        photoURL: user.photoURL || "#",
+                        uid: user.uid,
+                        phoneNumber: user.phoneNumber || null,
+                        providerData: user.providerData || null,
+                    };
+                    db.collection("sellers").where("by_user_id", "==", user.uid)
+                        .get()
+                        .then(function(querySnapshot) {
+                            if (querySnapshot.size !== 1) {
+                                console.log("SELLER LINK ERROR");
+                            } else {
+                                querySnapshot.forEach(function(doc) {
+                                    if (doc.data().type == 1) {
+                                        $("#activeOrderLink").attr("href", "/order_off_campus.html");
+                                    } else {
+                                        $("#activeOrderLink").attr("href", "/order_on_campus.html");
+                                    }
+                                    sellerInfo.obj = doc.data() || {};
+                                    document.getElementById("emailAddrSideBar").innerText = sellerInfo.obj.name;
+                                    document.getElementById("emailAddrTopNav").innerText = sellerInfo.obj.name;
+                                    if (doc.data().online) {
+                                        $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                                        $('#restOnline').html('Open');
+                                    } else {
+                                        $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                                        $('#restOnline').html('Closed');
+                                    }
+                                });
+                                window.sellerInfo = sellerInfo;
+                                initPage();
+                            }
+                        })
+                        .catch(function(error) {
+                            console.log("Error getting documents: ", error);
+                        });
+                } else {
+                    // User is signed out.
+                    window.location.replace("login.html");
+                }
+            }, function(error) {
+                console.log(error);
+            });
+        };
+
+        function addOrderCard(sectionId) {
+            var order = {
+                id: null,
+                identifier: null,
+                order_items: null,
+                state: null,
+                placed_by: null
+            }
+            let db = firebase.firestore();
+            db.collection("orders").where("section_id", "==", sectionId).get().then(function(query) {
+                query.forEach(function(doc) {
+                    order.id = doc.data().id;
+                    order.identifier = doc.data().identifier;
+                    order.order_items = doc.data().order_items;
+                    order.state = doc.data().state;
+                    order.message = doc.data().message;
+                    db.collection("users_public").where("id", "==", doc.data().user_id).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            order.placed_by = doc.data().username;
+                            var orderContent = `
+                    <div class="card card-primary">
+                        <div class="card-header" style="background-color: #765D69;">
+                            <h3 class="card-title">Order #` + order.identifier + `</h3>
+                            <div class="card-tools">
+                                <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
+                            </div>
+                        </div>
+                        <div class="card-body" style="display: block;">
+                            <h4 style="text-align: center;">#<span style="color: #765D69; font-size: 38px">` + order.identifier + `</span></h4>
+                            <table class="table table-borderless">
+                                    <tr>
+                                        <td><strong>Created by:</strong></td>
+                                        <td>` + order.placed_by + `</td>
+                                    </tr>` + (order.message ? '<tr><td><strong>Message:</td><td>' + order.message : '') + `     
+                            </table>
+                            <hr>
+                            <h4 style="text-align: center; font-weight:bold;">Order Summary</h4>
+                            <table class="table table-striped" style="table-layout: fixed; width: 100%" id="` + order.identifier + `">
+                                <thead>
+                                    <tr>
+                                        <th scope="col" style="width: 55%;">Item</th>
+                                        <th scope="col" style="width: 20%; text-align:center;">Pcs.</th>
+                                        <th scope="col" style="width: 25%; text-align:center;">Price</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    </tbody>
+                                </table>
+                            <hr>
+                        </div>
+                    </div>`;
+                            $("#" + sectionId + "_orderList").append('<div class="col-sm-2">' + orderContent + "</div>");
+
+                            for (var i = 0; i < order.order_items.length; i++) {
+                                let element = "#" + order.identifier;
+                                let row = `<tr><td scope="row" style="word-wrap: break-word">` + order.order_items[i].item_title + ` (` + order.order_items[i].item_title_zh + `)</td><td style="text-align:center;">` + order.order_items[i].amounts + `</td><td style="text-align:center;">$` + order.order_items[i].total_price + `</td></tr>`;
+                                $(element).find("tbody").append(row);
+                            }
+                        })
+                    })
+                })
+            });
+        }
+
+        function dateFormator(datetime, format) {
+            return moment(datetime).format(format);
+        }
+
+        function toggleAvailibility(sectionId, originalState, availibility) {
+            var db = firebase.firestore();
+            var user = firebase.auth().currentUser;
+            db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                queryResult.forEach(async function(doc) {
+                    db.collection("sellers").doc(doc.data().id).collection('sections').doc(sectionId).update({
+                        available: availibility,
+                    }).then(function() {
+                        let button = document.getElementById(sectionId + '_avail');
+                        let cardColor = document.getElementById(sectionId + '_cardColor');
+                        if (availibility) {
+                            button.innerHTML = `<button class="btn btn-sm btn-success active" onclick="toggleAvailibility('` + sectionId + `', '` + originalState + `', false)">
+                                        Available  <i class="fas fa-check-circle"></i>
+                                      </button>`;
+                            cardColor.className = "card " + card_color[originalState];
+
+                        } else {
+                            button.innerHTML = `<button class="btn btn-sm btn-danger active" onclick="toggleAvailibility('` + sectionId + `', '` + originalState + `', true)">
+                                        Not Available  <i class="fas fa-times-circle"></i>
+                                      </button>`;
+                            cardColor.className = "card " + card_color.not_available;
+                        }
+                    });
+                });
+            });
+        }
+
+        function createSectionCard(section) {
+            let seller = window.sellerInfo;
+            if (section.state == "5_delivered" || section.state == "4_ready_for_pick_up") {
+                return;
+            }
+            var row = document.createElement('div');
+            let badge = `<span class="badge badge-secondary">` + dateFormator(section.cutoff_time.toDate(), "(ddd) Do MMMM YYYY h:mm:ss a") + `</span>`;
+            if (moment().isAfter(section.cutoff_time.toDate())) {
+                badge = `<span class="badge badge-danger">` + dateFormator(section.cutoff_time.toDate(), "(ddd) Do MMMM YYYY h:mm:ss a") + `</span>`;
+            }
+            let button = `<button class="btn btn-sm btn-success active" onclick="toggleAvailibility('` + section.id + `', '` + section.state + `', false)">
+                            Available  <i class="fas fa-check-circle"></i>
+                          </button>`;
+            let cardColor = card_color[section.state];
+            if (!section.available) {
+                button = `<button class="btn btn-sm btn-danger active" onclick="toggleAvailibility('` + section.id + `', '` + section.state + `', true)">
+                          Not Available  <i class="fas fa-times-circle"></i>
+                        </button>`;
+                cardColor = card_color.not_available;
+            }
+            let isDisabled = "";
+            let isShipped = "Proceed";
+            if (section.state == "3_shipped") {
+                isDisabled = "disabled";
+                isShipped = "Shipped";
+            }
+            row.className = 'row';
+            row.innerHTML = `<div class="col-md-12">
+                        <div class="card ` + cardColor + `" id="` + section.id + `_cardColor">
+                          <div class="card-header">
+                            <h3 class="card-title" style="padding-right: 10px;">` + section.title + ' | ' + section.title_zh + `</h3>` + badge + `
+                            <div class="card-tools">
+                              <table>
+                                <tr>
+                                  <td style="padding-right: 1px;" id="` + section.id + `_avail">` + button + `</td>
+                                  <td style="padding-right: 3px;">
+                                    <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#editOrAddModal" onclick="prepInsert(false, '` + section.id + `')"> View \\ Edit</button>
+                                  </td>
+                                  <td  style="padding-right: 3px;">
+                                    <button type="button" class="btn btn-sm btn-block bg-gradient-light" data-toggle="modal" data-target="#comfirmProceed" onclick="prepInsertProceed('` + section.id + `', '` + section.state + `')" ` + isDisabled + `>` + isShipped + `</button>
+                                  </td>
+                                </tr>
+                              </table>
+                            </div>
+                          </div>                        
+                          <!-- /.card-body -->
+                          <div class="card-body" style="overflow-x: auto;">
+                            <div class="row" id="` + section.id + `_orderList" style="flex-wrap: nowrap;"></div>
+                          </div>
+                        </div>`;
+            var contentBody = document.getElementById('contentBody');
+            contentBody.appendChild(row);
+            addOrderCard(section.id);
+        }
+
+        function timestampCreator(datetime) {
+            if (datetime === "") return "";
+            let time = moment(datetime).unix();
+            return new firebase.firestore.Timestamp(time, 0);
+        }
+
+        function addItem() {
+            let currentUser = window.sellerInfo;
+            let location = document.getElementById('update-location').value;
+            let checker = {
+                title: $("#update-name").val(),
+                title_zh: $("#update-name-ch").val(),
+                description: $("#update-descrip").val(),
+                description_zh: $("#update-descrip-ch").val(),
+                max_users: parseInt($("#update-max-order").val()),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                cutoff_time: timestampCreator($("#update-cutofftime").val()),
+                deliverer_id: null,
+                deliverer_location: null,
+                deliverer_travel_mode: null,
+                delivery_cost: parseInt($("#update-delivery-cost").val()),
+                delivery_location: delivery_location[location],
+                delivery_time: timestampCreator($("#update-delivery-time").val()),
+                joined_users_count: 0,
+                joined_users_ids: [],
+                group_id: uuid.v4(),
+                seller_id: currentUser.obj.id,
+                seller_name: currentUser.obj.name,
+                seller_name_zh: currentUser.obj.name_zh,
+                state: "0_available",
+            }
+
+            let errorText = document.getElementById("addItemError");
+            for (element of Object.keys(checker)) {
+                if (checker[element] == "") {
+                    if (element == "description" || element == "description_zh") {
+                        checker[element] = null;
+                        continue;
+                    }
+                    if (element == "joined_users_count" || element == "joined_users_ids") continue;
+                    errorText.style.display = "block";
+                    console.log(element);
+                    console.log(checker[element]);
+                    return;
+                }
+            }
+            errorText.style.display = "none";
+
+            db.collection("sellers").doc(currentUser.obj.id).collection("sections")
+                .add(checker).then(function(docRef) {
+                    db.collection("sellers").doc(currentUser.obj.id).collection("sections").doc(docRef.id).update({
+                            id: docRef.id
+                        }).then(function() {
+                            if (document.getElementById('update-image').files.length > 0) {
+                                var path_filename = 'section_images/' + docRef.id + '.jpg';
+                                var imageElement = document.getElementById("update-image");
+                                var imageToUpload = imageElement.files[0];
+                                var storageRef = firebase.storage().ref();
+                                var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                                imageUploadTask.on('state_changed', function(snapshot) {
+                                    console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                                    var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                    console.log('Upload is ' + progress + '% done');
+                                    switch (snapshot.state) {
+                                        case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                            console.log('Upload is paused');
+                                            break;
+                                        case firebase.storage.TaskState.RUNNING: // or 'running'
+                                            console.log('Upload is running');
+                                            break;
+                                    }
+                                }, function(error) {
+                                    console.log('Upload is unsuccessful.');
+                                }, function() {
+                                    $("#editOrAddModal").modal('hide')
+                                    refreshPage();
+                                });
+                            } else {
+                                $("#editOrAddModal").modal('hide')
+                                refreshPage();
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error("Error updating food item record: ", error);
+                        });
+                })
+                .catch(function(error) {
+                    console.error("Error adding food item record: ", error);
+                });
+        }
+
+        function editItem() {
+            let currentUser = window.sellerInfo;
+            let itemId = document.getElementById('editOrAddModal_title').innerHTML;
+            if (itemId == "Timeslot") {
+                return;
+            }
+            let location = document.getElementById('update-location').value;
+            let checker = {
+                title: $("#update-name").val(),
+                title_zh: $("#update-name-ch").val(),
+                description: $("#update-descrip").val(),
+                description_zh: $("#update-descrip-ch").val(),
+                max_users: parseInt($("#update-max-order").val()),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                cutoff_time: timestampCreator($("#update-cutofftime").val()),
+                delivery_cost: parseInt($("#update-delivery-cost").val()),
+                delivery_location: delivery_location[location],
+                delivery_time: timestampCreator($("#update-delivery-time").val()),
+            }
+            let itemObj = {}
+            Object.keys(checker).forEach(function(element) {
+                if (element == "description" || element == "description_zh") {
+                    if (checker[element] == "") {
+                        itemObj[element] == null;
+                    }
+                } else if (checker[element] !== "") {
+                    itemObj[element] = checker[element];
+                }
+            });
+            db.collection("sellers").doc(currentUser.obj.id).collection("sections")
+                .doc(itemId).update(itemObj).then(function() {
+                    if (document.getElementById('update-image').files.length > 0) {
+                        var path_filename = 'sections_images/' + docRef.id + '.jpg';
+                        var imageElement = document.getElementById("update-image");
+                        var imageToUpload = imageElement.files[0];
+                        var storageRef = firebase.storage().ref();
+                        var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                        imageUploadTask.on('state_changed', function(snapshot) {
+                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            console.log('Upload is ' + progress + '% done');
+                            switch (snapshot.state) {
+                                case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                    console.log('Upload is paused');
+                                    break;
+                                case firebase.storage.TaskState.RUNNING: // or 'running'
+                                    console.log('Upload is running');
+                                    break;
+                            }
+                        }, function(error) {
+                            console.log('Upload is unsuccessful.');
+                        }, function() {
+                            $("#editOrAddModal").modal('hide')
+                            refreshPage();
+                        });
+                    } else {
+                        $("#editOrAddModal").modal('hide')
+                        refreshPage();
+                    }
+
+                })
+                .catch(function(error) {
+                    console.error("Error updating food item record: ", error);
+                });
+        }
+
+        function addOrEditItem() {
+            let header = document.getElementById('editOrAddModal_title');
+            if (header.innerHTML == "New Timeslot") addItem();
+            else editItem();
+        }
+
+        function refreshPage() {
+            seller = window.sellerInfo;
+            console.log(seller);
+            if (seller.isOnline == true) {
+                $("#restNotOnline").hide();
+                console.log("Rest is Online");
+            }
+            var contentBody = document.getElementById('contentBody');
+            contentBody.innerHTML = "";
+            let db = firebase.firestore();
+            db.collection("sellers").where("by_user_id", "==", seller.uid).get().then(function(query) {
+                query.forEach(function(doc) {
+                    var seller = doc.data();
+                    db.collection("sellers").doc(doc.data().id).collection('sections').orderBy("cutoff_time").get().then((querySnapshot) => {
+                        querySnapshot.forEach(function(section) {
+                            console.log(section.data().id, 'is', section.data().state);
+                            console.log(section.data());
+                            createSectionCard(section.data());
+                        });
+                    })
+                })
+            })
+        }
+
+        function prepInsert(newTimeslot, sectionId) {
+            let header = document.getElementById('editOrAddModal_title');
+            if (newTimeslot === true) {
+                header.innerHTML = "New Timeslot";
+                return;
+            }
+            let db = firebase.firestore();
+            let currentUser = window.sellerInfo;
+            let section;
+            db.collection("sellers").doc(currentUser.obj.id).collection('sections').doc(sectionId).get().then((section) => {
+                section = section.data();
+                console.log(section);
+                header.innerHTML = sectionId;
+                let insertTitle = document.getElementById('update-name');
+                insertTitle.value = section.title;
+
+                let insertTitleCH = document.getElementById('update-name-ch');
+                insertTitleCH.value = section.title_zh;
+
+                let insertDescrip = document.getElementById('update-descrip');
+                insertDescrip.value = section.description;
+
+                let insertDescripCH = document.getElementById('update-descrip-ch');
+                insertDescripCH.value = section.description_zh;
+
+                let insertPrice = document.getElementById('update-delivery-cost');
+                insertPrice.value = section.delivery_cost;
+
+                let insertMaxUsers = document.getElementById('update-max-order');
+                insertMaxUsers.value = section.max_users;
+
+                let insertLocation = document.getElementById('update-location');
+                insertLocation.value = 'atrium';
+
+                let insertDTime = document.getElementById('update-delivery-time');
+                insertDTime.value = dateFormator(section.delivery_time.toDate(), "YYYY-MM-DDTHH:mm")
+
+                let insertCOTime = document.getElementById('update-cutofftime');
+                insertCOTime.value = dateFormator(section.cutoff_time.toDate(), "YYYY-MM-DDTHH:mm")
+            })
+        }
+
+        function prepInsertProceed(sectionId, state) {
+            let header = document.getElementById('proceedSectionId');
+            header.innerHTML = sectionId;
+
+            let from = document.getElementById('fromState');
+            from.innerHTML = state_mapping[state];
+            from.className = state_to_badge[state];
+
+            let to = document.getElementById('toState');
+            to.innerHTML = state_mapping[next_state[state]];
+            to.className = state_to_badge[next_state[state]];
+
+            let errorText = document.getElementById("proceedError");
+            errorText.style.display = "none";
+        }
+
+        function proceedSection() {
+            let errorText = document.getElementById("proceedError");
+            let token = firebase.auth().currentUser.getIdToken().then(function(idToken) {
+                let header = {
+                    'Authorization': `${idToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                axios({
+                    method: 'post',
+                    url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/section/update',
+                    data: {
+                        'section_id': document.getElementById('proceedSectionId').innerHTML,
+                        'section_state': state_ReverseMapping[document.getElementById('toState').innerHTML],
+                    },
+                    headers: header,
+                    withCredentials: false
+                }).then(function(response) {
+                    $("#comfirmProceed").modal('hide')
+                    refreshPage();
+                }).catch(function(error) {
+                    errorText.style.display = "block";
+                    console.error(error.response.data);
+                });
+            });
+        }
+
+        const delivery_location = Object.freeze({
+            "atrium": {
+                "address": "Atrium, HKUST",
+                "address_zh": "中庭，香港科技大學",
+                "geopoint": new firebase.firestore.GeoPoint(22.336263, 114.263532),
+            },
+        });
+
+        const card_color = Object.freeze({
+            '0_available': 'card-success',
+            '1_processing': 'card-info',
+            '2_preparing': 'card-warning',
+            '3_shipped': 'card-primary',
+            '4_ready_for_pick_up': 'card-secondary',
+            'not_available': 'card-danger',
+        });
+
+        const next_state = Object.freeze({
+            '0_available': '1_processing',
+            '1_processing': '2_preparing',
+            '2_preparing': '3_shipped',
+        });
+
+        const state_mapping = Object.freeze({
+            '0_available': 'Active',
+            '1_processing': 'Processing',
+            '2_preparing': 'Preparing',
+            '3_shipped': 'Shipped',
+        });
+
+        const state_ReverseMapping = Object.freeze({
+            'Active': '0_available',
+            'Processing': '1_processing',
+            'Preparing': '2_preparing',
+            'Shipped': '3_shipped',
+        });
+
+        const state_to_badge = Object.freeze({
+            '0_available': 'badge badge-success',
+            '1_processing': 'badge badge-info',
+            '2_preparing': 'badge badge-warning',
+            '3_shipped': 'badge badge-primary',
+        });
+
+        function initPage() {
+            refreshPage();
+        }
+
+        window.addEventListener('load', initApp());
+    </script>
+    <style type="text/css">
+        @keyframes ldio-jvfgw8pv7fi {
+            0% {
+                opacity: 1;
+                backface-visibility: hidden;
+                transform: translateZ(0) scale(1.5, 1.5);
+            }
+            100% {
+                opacity: 0;
+                backface-visibility: hidden;
+                transform: translateZ(0) scale(1, 1);
+            }
+        }
+        
+        .ldio-jvfgw8pv7fi div>div {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #765d69;
+            animation: ldio-jvfgw8pv7fi 1s linear infinite;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(1)>div {
+            left: 148px;
+            top: 88px;
+            animation-delay: -0.875s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(1) {
+            transform: rotate(0deg);
+            transform-origin: 160px 100px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(2)>div {
+            left: 130px;
+            top: 130px;
+            animation-delay: -0.75s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(2) {
+            transform: rotate(45deg);
+            transform-origin: 142px 142px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(3)>div {
+            left: 88px;
+            top: 148px;
+            animation-delay: -0.625s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(3) {
+            transform: rotate(90deg);
+            transform-origin: 100px 160px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(4)>div {
+            left: 46px;
+            top: 130px;
+            animation-delay: -0.5s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(4) {
+            transform: rotate(135deg);
+            transform-origin: 58px 142px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(5)>div {
+            left: 28px;
+            top: 88px;
+            animation-delay: -0.375s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(5) {
+            transform: rotate(180deg);
+            transform-origin: 40px 100px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(6)>div {
+            left: 46px;
+            top: 46px;
+            animation-delay: -0.25s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(6) {
+            transform: rotate(225deg);
+            transform-origin: 58px 58px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(7)>div {
+            left: 88px;
+            top: 28px;
+            animation-delay: -0.125s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(7) {
+            transform: rotate(270deg);
+            transform-origin: 100px 40px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(8)>div {
+            left: 130px;
+            top: 46px;
+            animation-delay: 0s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(8) {
+            transform: rotate(315deg);
+            transform-origin: 142px 58px;
+        }
+        
+        .loadingio-spinner-spin-ax7491be6mu {
+            width: 200px;
+            height: 200px;
+            display: inline-block;
+            overflow: hidden;
+            background: none;
+        }
+        
+        .ldio-jvfgw8pv7fi {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform: translateZ(0) scale(1);
+            backface-visibility: hidden;
+            transform-origin: 0 0;
+            /* see note above */
+        }
+        
+        .ldio-jvfgw8pv7fi div {
+            box-sizing: content-box;
+        }
+        /* generated by https://loading.io/ */
+    </style>
+</head>
+
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div id='loading_wrap' style='background-color: white; z-index: 9999; position:fixed; height:100%; width:100%; overflow:hidden; top:0; left:0;'>
+        <div style='font-size: 32px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 50%; width: 100%;'>
+            <div class="loadingio-spinner-spin-ax7491be6mu">
+                <div class="ldio-jvfgw8pv7fi">
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style='font-size: 24px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 75%; width: 100%;'>
+            Loading, please wait...
+        </div>
+    </div>
+    <div class="wrapper">
+
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- Left navbar links -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="index.html" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="" class="nav-link" id="topBarOrderLink">Orders</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="editRest.html" class="nav-link">Edit Restaurant</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="foodItems.html" class="nav-link">Food Items</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="menu.html" class="nav-link">Menu</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="stats.html" class="nav-link">Order History</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="ratings.html" class="nav-link">Ratings</a>
+                </li>
+            </ul>
+            <!-- Right navbar links -->
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a id="logout" class="nav-link" href="#">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- /.navbar -->
+
+        <!-- Main Sidebar Container -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <!-- Brand Logo -->
+            <a href="index.html" class="brand-link">
+                <span class="brand-text font-weight-light">Foobar++ Dashboard</span>
+            </a>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Sidebar user panel (optional) -->
+                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                    <div class="info">
+                        <a id="emailAddrSideBar" href="#" class="d-block"></a>
+                    </div>
+                </div>
+
+                <!-- Sidebar Menu -->
+                <nav class="mt-2">
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                        <!-- Add icons to the links using the .nav-icon class
+               with font-awesome or any other icon font library -->
+                        <li class="nav-item">
+                            <a href="index.html" class="nav-link">
+                                <i class="nav-icon fas fa-tachometer-alt"></i>
+                                <p>
+                                    Dashboard
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Orders</li>
+                        <li class="nav-item">
+                            <a href="orders.html" class="nav-link active" id="activeOrderLink">
+                                <i class="nav-icon fa fa-shopping-cart"></i> Active orders
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Restaurant Information</li>
+                        <li class="nav-item">
+                            <a href="editRest.html" class="nav-link">
+                                <i class="nav-icon fas fa-edit"></i>
+                                <p>
+                                    Edit restaurant details
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Products</li>
+                        <li class="nav-item">
+                            <a href="foodItems.html" class="nav-link">
+                                <i class="nav-icon fas fa-hamburger"></i>
+                                <p id="emptyFoodItemsBadge">
+                                    Food items
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="menu.html" class="nav-link">
+                                <i class="nav-icon fas fa-shopping-cart"></i>
+                                <p>
+                                    Menu Contents
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Statistics</li>
+                        <li class="nav-item">
+                            <a href="stats.html" class="nav-link">
+                                <i class="nav-icon fa fa-shopping-cart"></i>
+                                <p>
+                                    Order History
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="ratings.html" class="nav-link">
+                                <i class="nav-icon fas fa-star"></i>
+                                <p>
+                                    Ratings
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Restaurant Status</li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <button type="button" class="btn btn-success" id="restOnline" onclick="toggleRestOnline()">Opened!</button>
+                            </a>
+                        </li>
+                </nav>
+                <!-- /.sidebar-menu -->
+            </div>
+            <!-- /.sidebar -->
+        </aside>
+
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper">
+            <!-- Content Header (Page header) -->
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-9">
+                            <table>
+                                <tr>
+                                    <td style="padding-right: 10px;">
+                                        <h1 class="m-0 text-dark">Group Orders</h1>
+                                    </td>
+                                    <td style="padding-right: 10px;">
+                                        <button type="button" class="btn btn-sm btn-block bg-gradient-success" data-toggle="modal" data-target="#editOrAddModal" onclick="prepInsert(true)">Add New Timeslot</button>
+                                    </td>
+                                    <td style="padding-right: 10px;">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm bg-gradient-white">State: </button>
+                                            <button type="button" class="btn btn-sm bg-gradient-success">Active</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-info">Processing</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-warning">Preparing</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-primary">Shipped</button>
+                                        </div>
+                                    </td>
+                                    <td style="padding-right: 10px;">
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm bg-gradient-white">Availability:
+                                            </button>
+                                            <button type="button" class="btn btn-sm bg-gradient-success">Available</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-danger">Not
+                                                Available</button>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-sm bg-gradient-white" onclick="refreshPage()">
+                                            <i class="fa fa-repeat"></i>
+                                            Refresh
+                                        </button>
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                        <!-- /.col -->
+                        <div class="col-sm-3">
+                            <ol class="breadcrumb float-sm-right">
+                                <li id="emailAddrTopNav" class="breadcrumb-item">
+                                    <a href="#"></a>
+                                </li>
+                                <li class="breadcrumb-item active">Group Orders</li>
+                            </ol>
+                        </div>
+                        <!-- /.col -->
+                    </div>
+                    <!-- /.row -->
+                </div>
+                <!-- /.container-fluid -->
+            </div>
+            <!-- /.content-header -->
+
+            <!-- Main content -->
+            <section class="content" id="contentBody">
+            </section>
+            <!-- /.content -->
+        </div>
+        <!-- /.content-wrapper -->
+        <footer class="main-footer">
+            <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+            <div class="float-right d-none d-sm-inline-block">
+                <b>Version</b> 3.0.5
+            </div>
+        </footer>
+
+        <!-- Control Sidebar -->
+        <aside class="control-sidebar control-sidebar-dark">
+            <!-- Control sidebar content goes here -->
+        </aside>
+        <!-- /.control-sidebar -->
+    </div>
+    <div class="modal fade" id="editOrAddModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editOrAddModal_title">Timeslot</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="update-name">Title</label>
+                        <input type="text" class="form-control" id="update-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-name-ch">Title (CH)</label>
+                        <input type="text" class="form-control" id="update-name-ch">
+                    </div>
+                    <label for="update-delivery-cost">Delivery Cost</label>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </span>
+                            </div>
+                            <input type="number" class="form-control" id="update-delivery-cost">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-count">Delivery Location</label>
+                        <select class="form-control" name="Location" id="update-location">
+                            <option value="atrium">Atrium, HKUST || 中庭，香港科技大學</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-delivery-time">Delivery Time</label>
+                        <input type="datetime-local" class="form-control" id="update-delivery-time">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-cutofftime">Group Cut Off Time</label>
+                        <input type="datetime-local" class="form-control" id="update-cutofftime">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-max-order">Max Orders</label>
+                        <input type="number" class="form-control" id="update-max-order">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-descrip">Description</label>
+                        <input type="text" class="form-control" id="update-descrip">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-descrip-ch">Description (CH)</label>
+                        <input type="text" class="form-control" id="update-descrip-ch">
+                    </div>
+                    <div class="form-group">
+                        <label for="exampleInputFile">Image</label>
+                        <div class="input-group">
+                            <div class="custom-file">
+                                <input type="file" accept="image/*" class="custom-file-input" id="update-image">
+                                <label class="custom-file-label" for="update-image">Choose file</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label id="addItemError" style="color: red; display: none; text-align: center;">You Should Fill in
+                        All the Blanks !!</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="addOrEditItem()">Confirm</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="comfirmProceed" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Proceed to the Next Stage</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <span>Are you confirm to proceed the section to the next stage?</span>
+                    <p>Section ID: </p>
+                    <p id="proceedSectionId"></p>
+                    <p>From: </p>
+                    <p><span id="fromState"></span></p>
+                    <p>To: </p>
+                    <p><span id="toState"></span></p>
+                </div>
+                <div class="form-group">
+                    <label id="proceedError" style="color: red; display: none; text-align: center;">Cloud Function
+                        Error.</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="proceedSection()">Confirm</button>
+                </div>
+            </div>
+        </div>
+        <!-- ./wrapper -->
+        <script>
+            var logoutBtn = document.getElementById('logout');
+            logoutBtn.onclick = function() {
+                firebase.auth().signOut().then(function() {
+                    window.location.replace("login.html");
+                })
+            }
+        </script>
+        <script>
+            function toggleRestOnline() {
+                var db = firebase.firestore();
+                var user = firebase.auth().currentUser;
+                db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                    queryResult.forEach(function(doc) {
+                        let currentUser = window.sellerInfo;
+                        doc_id = currentUser.obj.id;
+                        if (doc.data().online) {
+                            db.collection("sellers").doc(doc_id).update({
+                                online: false
+                            }).then(function() {
+                                $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                                $('#restOnline').html('Closed');
+                            });
+                        } else {
+                            db.collection("sellers").doc(doc_id).update({
+                                online: true
+                            }).then(function() {
+                                $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                                $('#restOnline').html('Open');
+                            });
+                        }
+                    });
+                });
+            }
+        </script>
+        <!-- jQuery -->
+        <script src="plugins/jquery/jquery.min.js"></script>
+        <!-- jQuery UI 1.11.4 -->
+        <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+        <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+        <script>
+            $.widget.bridge('uibutton', $.ui.button)
+        </script>
+        <!-- Bootstrap 4 -->
+        <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="plugins/bootstrap/js/bootstrap.min.js"></script>
+        <!-- JQVMap -->
+        <script src="plugins/jqvmap/jquery.vmap.min.js"></script>
+        <script src="plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+        <!-- jQuery Knob Chart -->
+        <script src="plugins/jquery-knob/jquery.knob.min.js"></script>
+        <!-- daterangepicker -->
+        <script src="plugins/moment/moment.min.js"></script>
+        <script src="plugins/daterangepicker/daterangepicker.js"></script>
+        <!-- Tempusdominus Bootstrap 4 -->
+        <script src="plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+        <!-- Summernote -->
+        <script src="plugins/summernote/summernote-bs4.min.js"></script>
+        <!-- overlayScrollbars -->
+        <script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+        <!-- AdminLTE App -->
+        <script src="dist/js/adminlte.js"></script>
+        <script src="dist/js/adminlte.min.js"></script>
+        <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+        <script src="dist/js/pages/dashboard.js"></script>
+        <!-- AdminLTE for demo purposes -->
+        <script src="dist/js/demo.js"></script>
+</body>
+
+</html>
