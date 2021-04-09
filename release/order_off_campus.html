@@ -216,6 +216,20 @@
             });
         }
 
+        function deleteSection() {
+            let seller = window.sellerInfo;
+            let sectionId = document.getElementById('deleteSectionId').innerHTML;
+            var db = firebase.firestore();
+            var user = firebase.auth().currentUser;
+            db.collection("sellers").doc(seller.obj.id).collection('sections').doc(sectionId).delete().then(function() {
+                console.log("Document successfully deleted!");
+                $("#confirmDelete").modal('hide')
+                refreshPage();
+            }).catch((error) => {
+                console.error("Error removing document: ", error);
+            });
+        }
+
         function createSectionCard(section) {
             let seller = window.sellerInfo;
             if (section.state == "5_delivered" || section.state == "4_ready_for_pick_up") {
@@ -259,7 +273,10 @@
                                     <button type="button" class="btn btn-sm btn-block bg-gradient-primary" data-toggle="modal" data-target="#editOrAddModal" onclick="prepInsert(false, '` + section.id + `')"> View \\ Edit</button>
                                   </td>
                                   <td  style="padding-right: 3px;">
-                                    <button type="button" class="btn btn-sm btn-block bg-gradient-light" data-toggle="modal" data-target="#comfirmProceed" onclick="prepInsertProceed('` + section.id + `', '` + section.state + `')" ` + isDisabled + `>` + isShipped + `</button>
+                                    <button type="button" class="btn btn-sm btn-block bg-gradient-light" data-toggle="modal" data-target="#confirmProceed" onclick="prepInsertProceed('` + section.id + `', '` + section.state + `')" ` + isDisabled + `>` + isShipped + `</button>
+                                  </td>
+                                  <td  style="padding-right: 3px;">
+                                    <button type="button" class="btn btn-sm btn-block bg-gradient-secondary" data-toggle="modal" data-target="#confirmDelete" onclick="prepInsertProceed('` + section.id + `', '` + section.state + `')">X</button>
                                   </td>
                                 </tr>
                               </table>
@@ -285,6 +302,7 @@
             let currentUser = window.sellerInfo;
             let location = document.getElementById('update-location').value;
             let checker = {
+                available: false,
                 title: $("#update-name").val(),
                 title_zh: $("#update-name-ch").val(),
                 description: $("#update-descrip").val(),
@@ -303,18 +321,18 @@
                 group_id: uuid.v4(),
                 seller_id: currentUser.obj.id,
                 seller_name: currentUser.obj.name,
-                seller_name_zh: currentUser.obj.name_zh,
+                seller_name_zh: currentUser.obj.name_zh || null,
                 state: "0_available",
             }
 
             let errorText = document.getElementById("addItemError");
             for (element of Object.keys(checker)) {
                 if (checker[element] == "") {
-                    if (element == "description" || element == "description_zh") {
+                    if (element == "description" || element == "description_zh" || element == "seller_name_zh") {
                         checker[element] = null;
                         continue;
                     }
-                    if (element == "joined_users_count" || element == "joined_users_ids") continue;
+                    if (element == "joined_users_count" || element == "joined_users_ids" || element == "available") continue;
                     errorText.style.display = "block";
                     console.log(element);
                     console.log(checker[element]);
@@ -324,7 +342,7 @@
             errorText.style.display = "none";
             var db = firebase.firestore();
             db.collection("sellers").doc(currentUser.obj.id).collection("sections")
-                .set(checker).then(function(docRef) {
+                .add(checker).then(function(docRef) {
                     db.collection("sellers").doc(currentUser.obj.id).collection("sections").doc(docRef.id).update({
                             id: docRef.id
                         }).then(function() {
@@ -398,7 +416,7 @@
             db.collection("sellers").doc(currentUser.obj.id).collection("sections")
                 .doc(itemId).update(itemObj).then(function() {
                     if (document.getElementById('update-image').files.length > 0) {
-                        var path_filename = 'sections_images/' + itemId + '.jpg';
+                        var path_filename = 'section_images/' + itemId + '.jpg';
                         var imageElement = document.getElementById("update-image");
                         var imageToUpload = imageElement.files[0];
                         var storageRef = firebase.storage().ref();
@@ -494,6 +512,10 @@
 
                 let insertCOTime = document.getElementById('update-cutofftime');
                 insertCOTime.value = ""
+
+                let insertImg = document.getElementById('sectionImg');
+                insertImg.src = "";
+
                 return;
             }
             let db = firebase.firestore();
@@ -529,12 +551,18 @@
 
                 let insertCOTime = document.getElementById('update-cutofftime');
                 insertCOTime.value = dateFormator(section.cutoff_time.toDate(), "YYYY-MM-DDTHH:mm")
+
+                let insertImg = document.getElementById('sectionImg');
+                insertImg.src = section.image_url;
             })
         }
 
         function prepInsertProceed(sectionId, state) {
             let header = document.getElementById('proceedSectionId');
             header.innerHTML = sectionId;
+
+            let deleteHeader = document.getElementById('deleteSectionId');
+            deleteHeader.innerHTML = sectionId;
 
             let from = document.getElementById('fromState');
             from.innerHTML = state_mapping[state];
@@ -1067,10 +1095,11 @@
                         <label for="exampleInputFile">Image</label>
                         <div class="input-group">
                             <div class="custom-file">
-                                <input type="file" accept="image/*" class="custom-file-input" id="update-image">
+                                <input type="file" accept="image/*" id="update-image">
                                 <label class="custom-file-label" for="update-image">Choose file</label>
                             </div>
                         </div>
+                        <img id="sectionImg" class="img-fluid">
                     </div>
                 </div>
                 <div class="form-group">
@@ -1084,7 +1113,8 @@
             </div>
         </div>
     </div>
-    <div class="modal fade" id="comfirmProceed" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+
+    <div class="modal fade" id="confirmProceed" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -1112,6 +1142,33 @@
                 </div>
             </div>
         </div>
+      </div>
+
+      <div class="modal fade" id="confirmDelete" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header alert-danger">
+                    <h5 class="modal-title">Delete Timeslot</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <span>Are you confirm delete the corresponding timeslot?</span>
+                    <p>Section ID: </p>
+                    <p id="deleteSectionId"></p>
+                </div>
+                <div class="form-group">
+                    <label id="proceedError" style="color: red; display: none; text-align: center;">Cloud Function
+                        Error.</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-danger" onclick="deleteSection()">Confirm</button>
+                </div>
+            </div>
+        </div>
+      </div>
         <!-- ./wrapper -->
         <script>
             var logoutBtn = document.getElementById('logout');

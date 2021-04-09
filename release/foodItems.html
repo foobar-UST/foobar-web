@@ -39,6 +39,7 @@
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-storage.js"></script>
     <script>
         // Your web app's Firebase configuration
         // For Firebase JS SDK v7.20.0 and later, measurementId is optional
@@ -436,7 +437,7 @@
                             id: docRef.id
                         }).then(function() {
                             if (document.getElementById('update-image').files.length > 0) {
-                                var path_filename = 'item_images/' + docRef.id + '.jpg';
+                                var path_filename = 'item_categories_images/' + docRef.id + '.jpg';
                                 var imageElement = document.getElementById("update-image");
                                 var imageToUpload = imageElement.files[0];
                                 var storageRef = firebase.storage().ref();
@@ -507,7 +508,7 @@
             db.collection("sellers").doc(currentUser.obj.id).collection("items")
                 .doc(itemId).update(itemObj).then(function() {
                     if (document.getElementById('update-image').files.length > 0) {
-                        var path_filename = 'item_images/' + docRef.id + '.jpg';
+                        var path_filename = 'item_categories_images/' + itemId + '.jpg';
                         var imageElement = document.getElementById("update-image");
                         var imageToUpload = imageElement.files[0];
                         var storageRef = firebase.storage().ref();
