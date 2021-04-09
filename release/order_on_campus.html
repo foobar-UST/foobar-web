@@ -71,6 +71,44 @@
         function initApp() {
             firebase.auth().onAuthStateChanged(function(user) {
                 if (user) {
+                    window.status_map = new Map();
+                    window.status_map.set('6_cancelled', 'Cancelled');
+                    window.status_map.set('5_archived', 'Archived');
+                    window.status_map.set('4_delivered', 'Delivered');
+                    window.status_map.set('3_ready_for_pick_up', 'Ready for Pickup');
+                    window.status_map.set('1_preparing', 'Preparing');
+                    window.status_map.set('0_processing', 'Processing');
+                    db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                        queryResult.forEach(function(doc) {
+                            if (doc.data().online) {
+                                $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                                $('#restOnline').html('Open');
+                            } else {
+                                $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                                $('#restOnline').html('Closed');
+                            }
+                        });
+                    });
+                    db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            if (doc.data().type == 1) {
+                                $("#activeOrderLink").attr("href", "/order_off_campus.html");
+                            } else {
+                                $("#activeOrderLink").attr("href", "/order_on_campus.html");
+                            }
+                            db.collection("sellers").doc(doc.data().id).collection("items_basic").get().then(function(query) {
+                                var hasEmptyStock = false;
+                                query.forEach(function(doc) {
+                                    if (doc.data().count == 0) {
+                                        hasEmptyStock = true;
+                                    }
+                                })
+                                if (hasEmptyStock) {
+                                    document.getElementById("emptyFoodItemsBadge").innerHTML += '<span class="right badge badge-danger">Empty stock!</span>';
+                                }
+                            })
+                        })
+                    })
                     let seller = {
                             seller_id: null,
                             isOnline: null,
@@ -133,13 +171,30 @@
                     order.order_items = doc.data().order_items;
                     order.state = doc.data().state;
                     order.message = doc.data().message;
+                    if (window.status_map.get(order.state) == "Delivered" || window.status_map.get(order.state) == "Cancelled" || window.status_map.get(order.state) == "Archived") {
+                        return;
+                    }
                     db.collection("users_public").where("id", "==", doc.data().user_id).get().then(function(query) {
                         query.forEach(function(doc) {
                             order.placed_by = doc.data().username;
+                            var order_state_class = '';
+                            var button_txt = '';
+                            if (window.status_map.get(order.state) == "Processing") {
+                                order_state_class = "prepareOrder";
+                                button_txt = "Prepare";
+                            }
+                            if (window.status_map.get(order.state) == "Preparing") {
+                                order_state_class = "readyOrder";
+                                button_txt = "Ready";
+                            }
+                            if (window.status_map.get(order.state) == "Ready for Pickup") {
+                                order_state_class = "deliverOrder";
+                                button_txt = "Deliver";
+                            }
                             var orderContent = `
                     <div class="card card-primary">
                         <div class="card-header" style="background-color: #765D69;">
-                            <h3 class="card-title"><strong>` + order.state + `</strong> - Order #` + order.identifier + `</h3>
+                            <h3 class="card-title"><strong>` + window.status_map.get(order.state) + `</strong> - Order #` + order.identifier + `</h3>
                             <div class="card-tools">
                                 <button type="button" class="btn btn-tool" data-card-widget="collapse"><i class="fas fa-minus"></i></button>
                             </div>
@@ -167,8 +222,8 @@
                                 </table>
                             <hr>
                             <table>
-                                <tr><td style="width: 50%;"><button type="button" class="btn btn-block btn-success changeOrderState" id="` + order.identifier + `-` + order.id + `">Prepare</button></td>
-                                    <td style="width: 50%;"><button type="button" class="btn btn-block btn-danger cancelOrder" id="` + order.identifier + `-` + order.id + `">Cancel</button></td>
+                                <tr><td class="align-right" style="width: 50%;"><button type="button" class="btn btn-block btn-success ` + order_state_class + `" id="` + order.identifier + `-` + order.id + `">` + button_txt + `</button></td>
+                                    <td class="align-right" style="width: 50%;"><button type="button" class="btn btn-block btn-danger cancelOrder" id="` + order.identifier + `-` + order.id + `">Cancel</button></td>
                                 </tr>
                             </table>
                         </div>
@@ -201,123 +256,6 @@
             });
         }
 
-        function initFoodItemBox() {
-            let currentUser = window.sellerInfo;
-            let catFoodTable = document.getElementById("cat-food-table");
-            catFoodTable.innerHTML =
-                `
-      <div class="card-footer">
-        To change the category of the food items, please visit the <a href="foodItems.html">Food Items</a> page to edit the food item.
-      </div>
-      `;
-            let catalog_arr = Object.keys(catalog_list);
-            catalog_arr.forEach(async function(element) {
-                let newHeader = document.createElement('div');
-                newHeader.className = "form-group";
-                newHeader.innerHTML = "<p><strong>" + catalog_list[element][0] + " || " + catalog_list[element][1] + "</strong></p>";
-
-                let newItemTableCard = document.createElement('div');
-                newItemTableCard.className = "form-group";
-
-                let newItemTable = document.createElement('table');
-                newItemTable.className = "table table-striped table-sm";
-
-                let newTableHeader = newItemTable.createTHead();
-                let newTableHeaderRow = newTableHeader.insertRow();
-
-                let newTableHeaderRowTH1 = document.createElement('th');
-                newTableHeaderRowTH1.style.width = '40%';
-                newTableHeaderRowTH1.innerText = 'Name';
-                newTableHeaderRow.appendChild(newTableHeaderRowTH1)
-
-                let newTableHeaderRowTH2 = document.createElement('th');
-                newTableHeaderRowTH2.style.width = '40%';
-                newTableHeaderRow.appendChild(newTableHeaderRowTH2)
-
-                let newTableHeaderRowTH3 = document.createElement('th');
-                newTableHeaderRowTH3.style.width = '10%';
-                newTableHeaderRowTH3.innerText = 'Price';
-                newTableHeaderRow.appendChild(newTableHeaderRowTH3)
-
-                let newTableHeaderRowTH4 = document.createElement('th');
-                newTableHeaderRowTH4.style.width = '10%';
-                newTableHeaderRowTH4.innerText = 'Stock';
-                newTableHeaderRow.appendChild(newTableHeaderRowTH4)
-
-                let newTableBody = document.createElement("TBODY");
-
-                await db.collection("sellers").doc(currentUser.obj.id).collection("items").where("catalog_id", "==", element)
-                    .get()
-                    .then(function(querySnapshot) {
-                        if (querySnapshot.size == 0) {
-                            let newRow = newTableBody.insertRow()
-                            let cellNoItem = newRow.insertCell();
-                            cellNoItem.innerHTML = "No Food Item";
-                            newRow.insertCell();
-                            newRow.insertCell();
-                            newRow.insertCell();
-                        }
-                        querySnapshot.forEach(function(doc) {
-                            let currentItem = doc.data()
-
-                            let newRow = newTableBody.insertRow()
-
-                            let cellTitleENG = newRow.insertCell();
-                            cellTitleENG.innerHTML = currentItem.title;
-
-                            let cellTitleCH = newRow.insertCell();
-                            cellTitleCH.innerHTML = currentItem.title_zh;
-
-                            let cellPrice = newRow.insertCell();
-                            cellPrice.innerHTML = "$" + currentItem.price;
-
-                            let cellCount = newRow.insertCell();
-                            cellCount.innerHTML = currentItem.count;
-
-                        });
-                        newItemTable.appendChild(newTableBody)
-                        newItemTableCard.appendChild(newItemTable)
-                        newHeader.appendChild(newItemTableCard)
-                        catFoodTable.appendChild(newHeader)
-                    })
-                    .catch(function(error) {
-                        console.log("Error getting documents: ", error);
-                    });
-
-            })
-        }
-
-        function addCategory() {
-            let currentUser = window.sellerInfo;
-            let catObj = {
-                available: true,
-                title: $("#catForm-name").val(),
-                title_zh: $("#catForm-name-ch").val(),
-                updated_at: firebase.firestore.Timestamp.fromDate(new Date())
-            }
-            let errorText = document.getElementById("inputFormError");
-            if (catObj.title == "" || catObj.title_zh == "") {
-                errorText.style.display = "block";
-            } else {
-                db.collection("sellers").doc(currentUser.obj.id).collection("catalogs").add(catObj).then(function(docRef) {
-                        db.collection("sellers").doc(currentUser.obj.id).collection("catalogs").doc(docRef.id).update({
-                                id: docRef.id
-                            }).then(function() {
-                                $("#addCategory").modal('hide');
-                                errorText.style.display = "none";
-                                initCatList();
-                                initFoodItemBox();
-                            })
-                            .catch(function(error) {
-                                console.error("Error updating catalog record: ", error);
-                            });
-                    })
-                    .catch(function(error) {
-                        console.error("Error adding catalog record: ", error);
-                    });
-            }
-        }
-
         function initPage() {
             seller = window.sellerInfo;
             if (seller.isOnline == true) {
@@ -330,8 +268,7 @@
                     db.collection("orders").where("seller_id", "==", seller.seller_id).orderBy("updated_at").onSnapshot((snapshot) => {
                         snapshot.docChanges().forEach((change) => {
                             console.log(change.doc.data().id, 'is', change.doc.data().state);
-                            console.log('change.doc.data().state != "delivered"', 'is', change.doc.data().state != "delivered");
-                            if (change.type === "added" && (change.doc.data().state != "delivered" || change.doc.data().state != "cancelled")) {
+                            if (change.type === "added" && (change.doc.data().state != "delivered" || change.doc.data().state != "cancelled" || change.doc.data().state != "archived")) {
                                 console.log('add', change.doc.data().id);
                                 addOrderCard(change.doc.data().id);
                             }
@@ -515,15 +452,14 @@
             Loading, please wait...
         </div>
     </div>
-    <!-- cancelledOrder Successful Modal -->
-    <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderCancelledFail">
+    <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderStatusChangeFail">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="exampleModalLabel">Order Cancellation Failed.</h5>
                 </div>
                 <div class="modal-body">
-                    <p>An error occurred while processing the cancellation request. Please contact Foobar++ development team.
+                    <p>An error occurred while processing the status change request. Please contact Foobar++ development team.
                     </p>
                 </div>
                 <div class="modal-footer">
@@ -532,7 +468,6 @@
             </div>
         </div>
     </div>
-    <!-- cancelledOrder Successful Modal -->
     <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderCancelled">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
@@ -541,6 +476,53 @@
                 </div>
                 <div class="modal-body">
                     <p>The order is cancelled. A notification has been sent to the user making the order.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderPrepared">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Order is being prepared</h5>
+                </div>
+                <div class="modal-body">
+                    <p>The order is being prepared. A notification has been sent to the user making the order.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderReady">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Order is now ready</h5>
+                </div>
+                <div class="modal-body">
+                    <p>The order is now ready for pick up. A notification has been sent to the user making the order.
+                    </p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" tabindex="-1" data-backdrop="static" role="dialog" aria-hidden="true" id="orderDelivered">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="exampleModalLabel">Order is now delivered</h5>
+                </div>
+                <div class="modal-body">
+                    <p>The order is now delivered. The customers will be able to leave a rating for the order being delivered. Please check the <a href="ratings.html">ratings</a> page later.
+                    </p>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal" onclick="location.reload()">Close</button>
@@ -568,6 +550,66 @@
             </div>
         </div>
     </div>
+    <div class="modal fade" id="confirmPrepareOrder" data-backdrop="static" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Prepare Order #<span id="prepareOrderID"></span>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Are you sure you want to prepare this order?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Return</button>
+                    <button type="button" class="btn btn-success" onclick="prepareOrder()">Prepare</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmReadyOrder" data-backdrop="static" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Order #<span id="readyOrderID"> ready?</span>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Is the order ready for pick up?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Return</button>
+                    <button type="button" class="btn btn-success" onclick="readyOrder()">Ready</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="confirmDeliverOrder" data-backdrop="static" tabindex="-1" role="dialog" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="staticBackdropLabel">Order #<span id="deliverOrderID"> delivered?</span>
+                    </h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    Is the order delivered?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Return</button>
+                    <button type="button" class="btn btn-success" onclick="deliverOrder()">Delivered</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="wrapper">
 
         <!-- Navbar -->
@@ -581,59 +623,31 @@
                     <a href="index.html" class="nav-link">Home</a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
-                    <a href="#" class="nav-link">FAQ</a>
+                    <a href="" class="nav-link" id="topBarOrderLink">Orders</a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
-                    <a href="#" class="nav-link">Help Center</a>
+                    <a href="editRest.html" class="nav-link">Edit Restaurant</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="foodItems.html" class="nav-link">Food Items</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="menu.html" class="nav-link">Menu</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="stats.html" class="nav-link">Order History</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="ratings.html" class="nav-link">Ratings</a>
                 </li>
             </ul>
-
-            <!-- SEARCH FORM -->
-            <form class="form-inline ml-3">
-                <div class="input-group input-group-sm">
-                    <input class="form-control form-control-navbar" type="search" placeholder="Search items" aria-label="Search">
-                    <div class="input-group-append">
-                        <button class="btn btn-navbar" type="submit">
-                            <i class="fas fa-search"></i>
-                        </button>
-                    </div>
-                </div>
-            </form>
-
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
-                <!-- Messages Dropdown Menu -->
-                <!-- Notifications Dropdown Menu -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link" data-toggle="dropdown" href="#">
-                        <i class="far fa-bell"></i>
-                        <span class="badge badge-warning navbar-badge">7</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <span class="dropdown-item dropdown-header">7 Notifications</span>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-utensils mr-2"></i> 3 new orders
-                            <span class="float-right text-muted text-sm">3 mins ago</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-exclamation mr-2"></i> 1 item with empty stock
-                            <span class="float-right text-muted text-sm">1 min ago</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-star mr-2"></i> 3 new ratings
-                            <span class="float-right text-muted text-sm">2 days</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
-                    </div>
-                </li>
                 <li class="nav-item">
                     <a id="logout" class="nav-link" href="#">
                         <i class="fas fa-sign-out-alt mr-2"></i> Logout
                     </a>
+                </li>
             </ul>
         </nav>
         <!-- /.navbar -->
@@ -641,20 +655,16 @@
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="index3.html" class="brand-link">
-                <img src="dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-                <span class="brand-text font-weight-light">Foobar++</span>
+            <a href="index.html" class="brand-link">
+                <span class="brand-text font-weight-light">Foobar++ Dashboard</span>
             </a>
 
             <!-- Sidebar -->
             <div class="sidebar">
                 <!-- Sidebar user panel (optional) -->
                 <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-                    <div class="image">
-                        <img src="dist/img/can.teen.jpg" class="img-circle elevation-2" alt="User Image">
-                    </div>
                     <div class="info">
-                        <a id="emailAddrSideBar" class="d-block"></a>
+                        <a id="emailAddrSideBar" href="#" class="d-block"></a>
                     </div>
                 </div>
 
@@ -673,11 +683,8 @@
                         </li>
                         <li class="nav-header">Orders</li>
                         <li class="nav-item">
-                            <a href="orders.html" class="nav-link">
-                                <i class="nav-icon fa fa-shopping-cart"></i>
-                                <p>
-                                    Active orders
-                                    <span class="badge badge-info right">1</span>
+                            <a href="orders.html" class="nav-link active" id="activeOrderLink">
+                                <i class="nav-icon fa fa-shopping-cart"></i> Active orders
                                 </p>
                             </a>
                         </li>
@@ -687,7 +694,6 @@
                                 <i class="nav-icon fas fa-edit"></i>
                                 <p>
                                     Edit restaurant details
-                                    <span class="badge badge-info right">1</span>
                                 </p>
                             </a>
                         </li>
@@ -695,27 +701,25 @@
                         <li class="nav-item">
                             <a href="foodItems.html" class="nav-link">
                                 <i class="nav-icon fas fa-hamburger"></i>
-                                <p>
+                                <p id="emptyFoodItemsBadge">
                                     Food items
-                                    <span class="right badge badge-danger">Empty stock!</span>
                                 </p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="menu.html" class="nav-link active">
+                            <a href="menu.html" class="nav-link">
                                 <i class="nav-icon fas fa-shopping-cart"></i>
                                 <p>
                                     Menu Contents
-                                    <span class="badge badge-info right">5</span>
                                 </p>
                             </a>
                         </li>
                         <li class="nav-header">Statistics</li>
                         <li class="nav-item">
-                            <a href="orders.html" class="nav-link">
-                                <i class="nav-icon fas fa-chart-pie"></i>
+                            <a href="stats.html" class="nav-link">
+                                <i class="nav-icon fa fa-shopping-cart"></i>
                                 <p>
-                                    Order statistics
+                                    Order History
                                 </p>
                             </a>
                         </li>
@@ -807,58 +811,144 @@
         }
     </script>
     <script>
-        function cancelOrder() {
-            console.log('received cancel order ID:', window.cancelOrderID);
-            $('#confirmCancelOrder').modal('hide');
-            /*
-            let api_url = "https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update";
-            let data = {
-                "order_id": window.cancelOrderID,
-                "order_state": "cancelled"
-            };
-            let header = {
-                'Content-Type': 'application/json',
-                'Authorization': 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjYxMDgzMDRiYWRmNDc1MWIyMWUwNDQwNTQyMDZhNDFkOGZmMWNiYTgiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZm9vYmFyLWdyb3VwLWRlbGl2ZXJ5LWFwcCIsImF1ZCI6ImZvb2Jhci1ncm91cC1kZWxpdmVyeS1hcHAiLCJhdXRoX3RpbWUiOjE2MTM2NDE3NTEsInVzZXJfaWQiOiJ4QTR0YWI1QkswYWtzRkx0UVJMM25NemtuRWMyIiwic3ViIjoieEE0dGFiNUJLMGFrc0ZMdFFSTDNuTXprbkVjMiIsImlhdCI6MTYxMzY0MTc1MSwiZXhwIjoxNjEzNjQ1MzUxLCJlbWFpbCI6Im1jZEBmb29iYXJwcC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibWNkQGZvb2JhcnBwLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.CwGpblMH30BYesZHcYuwSmp_zq_XKxn7P-nNcYZV6vW1QB4NJt5uyr-Do30NlUwK6JaU43oPDIUE0DloGwyH3pyZ0j2zaZHXbIRJBh3OPStA45OfWuBOEgnqM84oAATbU5fS_RjyOAvdaaCwMf8w8xN0v7eM0plIUVOFhg6PJB2IPKHg9pAeVscdXyOgkTQQNOxeoe8Sb5rllgBeJ6HqpwBIdjcnmWuGrQTjrDhba4k-7mFJJXtylImamtYg2ioifUGagJQk1D5De7J7GR533niEcrCbXTpqpXxt5WBmGKyxRCD1ZYGLF7dwkaEXS1kV7ScY0cRSccGPn2Buk9KPnQ'
-            }
-            axios.post(api_url, data, {
-                header
-            }).then(function(response) {
-                $('#orderCancelled').modal('show');
-                console.log(response);
-            }).catch(function(error) {
-                $('#orderCancelledFail').modal('show');
-                console.error(error);
-            });*/
-            let token = 'eyJhbGciOiJSUzI1NiIsImtpZCI6IjYxMDgzMDRiYWRmNDc1MWIyMWUwNDQwNTQyMDZhNDFkOGZmMWNiYTgiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3NlY3VyZXRva2VuLmdvb2dsZS5jb20vZm9vYmFyLWdyb3VwLWRlbGl2ZXJ5LWFwcCIsImF1ZCI6ImZvb2Jhci1ncm91cC1kZWxpdmVyeS1hcHAiLCJhdXRoX3RpbWUiOjE2MTM2NDE3NTEsInVzZXJfaWQiOiJ4QTR0YWI1QkswYWtzRkx0UVJMM25NemtuRWMyIiwic3ViIjoieEE0dGFiNUJLMGFrc0ZMdFFSTDNuTXprbkVjMiIsImlhdCI6MTYxMzY0MTc1MSwiZXhwIjoxNjEzNjQ1MzUxLCJlbWFpbCI6Im1jZEBmb29iYXJwcC5jb20iLCJlbWFpbF92ZXJpZmllZCI6ZmFsc2UsImZpcmViYXNlIjp7ImlkZW50aXRpZXMiOnsiZW1haWwiOlsibWNkQGZvb2JhcnBwLmNvbSJdfSwic2lnbl9pbl9wcm92aWRlciI6InBhc3N3b3JkIn19.CwGpblMH30BYesZHcYuwSmp_zq_XKxn7P-nNcYZV6vW1QB4NJt5uyr-Do30NlUwK6JaU43oPDIUE0DloGwyH3pyZ0j2zaZHXbIRJBh3OPStA45OfWuBOEgnqM84oAATbU5fS_RjyOAvdaaCwMf8w8xN0v7eM0plIUVOFhg6PJB2IPKHg9pAeVscdXyOgkTQQNOxeoe8Sb5rllgBeJ6HqpwBIdjcnmWuGrQTjrDhba4k-7mFJJXtylImamtYg2ioifUGagJQk1D5De7J7GR533niEcrCbXTpqpXxt5WBmGKyxRCD1ZYGLF7dwkaEXS1kV7ScY0cRSccGPn2Buk9KPnQ';
-            let header = {
-                'Authorization': `${token}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
-            console.log(header);
-            axios({
-                method: 'post',
-                url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update',
-                data: {
-                    'order_id': window.cancelOrderID,
-                    'order_state': 'cancelled'
-                },
-                headers: header,
-                withCredentials: false
-            }).then(function(response) {
-                $('#orderCancelled').modal('show');
-                console.log(response);
-            }).catch(function(error) {
-                $('#orderCancelledFail').modal('show');
-                console.error(error.response.data);
+        function deliverOrder() {
+            console.log('received deliver order ID:', window.orderID);
+            $('#confirmDeliverOrder').modal('hide');
+            let token = firebase.auth().currentUser.getIdToken().then(function(idToken) {
+                let header = {
+                    'Authorization': `${idToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                axios({
+                    method: 'post',
+                    url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update',
+                    data: {
+                        'order_id': window.orderID,
+                        'order_state': '4_delivered'
+                    },
+                    headers: header,
+                    withCredentials: false
+                }).then(function(response) {
+                    $('#orderDelivered').modal('show');
+                    console.log(response);
+                }).catch(function(error) {
+                    $('#orderStatusChangeFail').modal('show');
+                    console.error(error.response.data);
+                });
             });
         }
+
+        function readyOrder() {
+            console.log('received ready order ID:', window.orderID);
+            $('#confirmReadyOrder').modal('hide');
+            let token = firebase.auth().currentUser.getIdToken().then(function(idToken) {
+                let header = {
+                    'Authorization': `${idToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                axios({
+                    method: 'post',
+                    url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update',
+                    data: {
+                        'order_id': window.orderID,
+                        'order_state': '3_ready_for_pick_up'
+                    },
+                    headers: header,
+                    withCredentials: false
+                }).then(function(response) {
+                    $('#orderReady').modal('show');
+                    console.log(response);
+                }).catch(function(error) {
+                    $('#orderStatusChangeFail').modal('show');
+                    console.error(error.response.data);
+                });
+            });
+        }
+
+        function prepareOrder() {
+            console.log('received prepare order ID:', window.orderID);
+            $('#confirmPrepareOrder').modal('hide');
+            let token = firebase.auth().currentUser.getIdToken().then(function(idToken) {
+                let header = {
+                    'Authorization': `${idToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                axios({
+                    method: 'post',
+                    url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update',
+                    data: {
+                        'order_id': window.orderID,
+                        'order_state': '1_preparing'
+                    },
+                    headers: header,
+                    withCredentials: false
+                }).then(function(response) {
+                    $('#orderPrepared').modal('show');
+                    console.log(response);
+                }).catch(function(error) {
+                    $('#orderStatusChangeFail').modal('show');
+                    console.error(error.response.data);
+                });
+            });
+        }
+
+        function cancelOrder() {
+            console.log('received cancel order ID:', window.orderID);
+            $('#confirmCancelOrder').modal('hide');
+            let token = firebase.auth().currentUser.getIdToken().then(function(idToken) {
+                let header = {
+                    'Authorization': `${idToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                axios({
+                    method: 'post',
+                    url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/order/update',
+                    data: {
+                        'order_id': window.orderID,
+                        'order_state': '6_cancelled'
+                    },
+                    headers: header,
+                    withCredentials: false
+                }).then(function(response) {
+                    $('#orderCancelled').modal('show');
+                    console.log(response);
+                }).catch(function(error) {
+                    $('#orderStatusChangeFail').modal('show');
+                    console.error(error.response.data);
+                });
+            });
+        }
+        $("body").on("click", ".prepareOrder", function() {
+            window.orderIdentifier = this.id.slice(0, 5)
+            window.orderID = this.id.slice(6);
+            console.log(window.orderID);
+            $("#prepareOrderID").text(window.orderIdentifier);
+            $('#confirmPrepareOrder').modal('show');
+        })
         $("body").on("click", ".cancelOrder", function() {
             window.orderIdentifier = this.id.slice(0, 5)
-            window.cancelOrderID = this.id.slice(6);
-            console.log(window.cancelOrderID);
+            window.orderID = this.id.slice(6);
+            console.log(window.orderID);
             $("#cancelOrderID").text(window.orderIdentifier);
             $('#confirmCancelOrder').modal('show');
+        })
+        $("body").on("click", ".readyOrder", function() {
+            window.orderIdentifier = this.id.slice(0, 5)
+            window.orderID = this.id.slice(6);
+            console.log(window.orderID);
+            $("#readyOrderID").text(window.orderIdentifier);
+            $('#confirmReadyOrder').modal('show');
+        })
+        $("body").on("click", ".deliverOrder", function() {
+            window.orderIdentifier = this.id.slice(0, 5)
+            window.orderID = this.id.slice(6);
+            console.log(window.orderID);
+            $("#deliverOrderID").text(window.orderIdentifier);
+            $('#confirmDeliverOrder').modal('show');
         })
     </script>
     <script>

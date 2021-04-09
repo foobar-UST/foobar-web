@@ -1,541 +1,683 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Foobar++ | Admin Dashboard</title>
-  <!-- Tell the browser to be responsive to screen width -->
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <!-- Font Awesome -->
-  <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
-  <!-- Ionicons -->
-  <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
-  <!-- Tempusdominus Bbootstrap 4 -->
-  <link rel="stylesheet" href="plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
-  <!-- iCheck -->
-  <link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
-  <!-- JQVMap -->
-  <link rel="stylesheet" href="plugins/jqvmap/jqvmap.min.css">
-  <!-- Theme style -->
-  <link rel="stylesheet" href="dist/css/adminlte.css">
-  <!-- overlayScrollbars -->
-  <link rel="stylesheet" href="plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
-  <!-- Daterange picker -->
-  <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css">
-  <!-- summernote -->
-  <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css">
-  <!-- Google Font: Source Sans Pro -->
-  <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
-  <style>
-  .checked {
-    color: orange;
-  }
-  </style>
-</head>
-<body class="hold-transition sidebar-mini layout-fixed">
-<div class="wrapper">
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Foobar++ | Admin Dashboard</title>
+    <!-- Tell the browser to be responsive to screen width -->
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="plugins/fontawesome-free/css/all.min.css">
+    <!-- Ionicons -->
+    <link rel="stylesheet" href="https://code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css">
+    <!-- Tempusdominus Bbootstrap 4 -->
+    <link rel="stylesheet" href="plugins/tempusdominus-bootstrap-4/css/tempusdominus-bootstrap-4.min.css">
+    <!-- iCheck -->
+    <link rel="stylesheet" href="plugins/icheck-bootstrap/icheck-bootstrap.min.css">
+    <!-- JQVMap -->
+    <link rel="stylesheet" href="plugins/jqvmap/jqvmap.min.css">
+    <!-- Theme style -->
+    <link rel="stylesheet" href="dist/css/adminlte.css">
+    <!-- overlayScrollbars -->
+    <link rel="stylesheet" href="plugins/overlayScrollbars/css/OverlayScrollbars.min.css">
+    <!-- Daterange picker -->
+    <link rel="stylesheet" href="plugins/daterangepicker/daterangepicker.css">
+    <!-- summernote -->
+    <link rel="stylesheet" href="plugins/summernote/summernote-bs4.css">
+    <!-- Google Font: Source Sans Pro -->
+    <link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:300,400,400i,700" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
 
-  <!-- Navbar -->
-  <nav class="main-header navbar navbar-expand navbar-white navbar-light">
-    <!-- Left navbar links -->
-    <ul class="navbar-nav">
-      <li class="nav-item">
-        <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
-      </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="index.html" class="nav-link">Home</a>
-      </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link">FAQ</a>
-      </li>
-      <li class="nav-item d-none d-sm-inline-block">
-        <a href="#" class="nav-link">Help Center</a>
-      </li>
-    </ul>
+    <!-- jQuery -->
+    <script src="plugins/jquery/jquery.min.js"></script>
+    <!-- jQuery UI 1.11.4 -->
+    <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/toastr.js/latest/js/toastr.min.js"></script>
+    <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
+    <script src="js/firebase.config.js"></script>
 
-    <!-- SEARCH FORM -->
-    <form class="form-inline ml-3">
-      <div class="input-group input-group-sm">
-        <input class="form-control form-control-navbar" type="search" placeholder="Search items" aria-label="Search">
-        <div class="input-group-append">
-          <button class="btn btn-navbar" type="submit">
-            <i class="fas fa-search"></i>
-          </button>
-        </div>
-      </div>
-    </form>
+    <script>
+        $(document).ready(function() {
+            setTimeout(function() {
+                $('#loading_wrap').fadeOut();
+            }, 1500);
+        })
+        var db = firebase.firestore();
+        initApp = function() {
+            firebase.auth().onAuthStateChanged(function(user) {
+                if (user) {
+                    window.status_map = new Map();
+                    window.status_map.set('6_cancelled', 'Cancelled');
+                    window.status_map.set('5_archived', 'Archived');
+                    window.status_map.set('4_delivered', 'Delivered');
+                    window.status_map.set('3_ready_for_pick_up', 'Ready for Pickup');
+                    window.status_map.set('2_in_transit', "In Transit")
+                    window.status_map.set('1_preparing', 'Preparing');
+                    window.status_map.set('0_processing', 'Processing');
+                    db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                        queryResult.forEach(function(doc) {
+                            if (doc.data().online) {
+                                $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                                $('#restOnline').html('Open');
+                            } else {
+                                $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                                $('#restOnline').html('Closed');
+                            }
+                        });
+                    });
+                    // user is signed in
+                    db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            document.getElementById("emailAddrSideBar").innerText = doc.data().name;
+                            document.getElementById("emailAddrTopNav").innerText = doc.data().name;
+                            var hasEmptyStock = false;
+                            if (doc.data().type == 1) {
+                                $("#activeOrderLink").attr("href", "/order_off_campus.html");
+                            } else {
+                                $("#activeOrderLink").attr("href", "/order_on_campus.html");
+                            }
+                            db.collection("sellers").doc(doc.data().id).collection("items_basic").get().then(function(query) {
+                                query.forEach(function(doc) {
+                                    if (doc.data().count == 0) {
+                                        hasEmptyStock = true;
+                                    }
+                                })
+                                if (hasEmptyStock) {
+                                    document.getElementById("emptyFoodItemsBadge").innerHTML += '<span class="right badge badge-danger">Empty stock!</span>';
+                                }
+                            })
+                            db.collection("orders").where("seller_id", "==", doc.data().id).get().then(function(query) {
+                                var accumulatedIncome = 0;
+                                query.forEach(function(doc) {
+                                    if (window.status_map.get(doc.data().state) == "Cancelled" ||
+                                        window.status_map.get(doc.data().state) == "Ready for Pickup" ||
+                                        window.status_map.get(doc.data().state) == "Preparing" ||
+                                        window.status_map.get(doc.data().state) == "Processing" ||
+                                        window.status_map.get(doc.data().state) == "In Transit") {
+                                        return;
+                                    }
+                                    accumulatedIncome += Number(doc.data().total_cost);
+                                    var orderDate = doc.data().created_at.toDate().toString().slice(4, 15);
+                                    var orderIdentifier = doc.data().identifier;
+                                    var orderTotalCost = doc.data().total_cost;
+                                    var orderID = doc.data().id;
+                                    db.collection("users_public").where("id", "==", doc.data().user_id).get().then(function(query) {
+                                        query.forEach(function(doc) {
+                                            var historyOrderTableField = `
+                                    <tr>
+                                        <td class="align-middle">` + orderDate + `</td>
+                                        <td class="align-middle"><img src=` + doc.data().photo_url + ` alt class="img-circle img-fluid" width="25px"> ` + doc.data().username + `</td>
+                                        <td class="align-middle">` + orderIdentifier + `</td>
+                                        <td class="align-middle">$` + orderTotalCost + `</td>
+                                        <td class="align-middle"><button type="button" class="checkOrder btn btn-block btn-default" id="` + orderID + `">Details</button>
+                                    </tr>`;
+                                            $("#historyOrderTable").append(historyOrderTableField);
+                                        })
+                                    })
+                                })
+                                document.getElementById("totalIncome").innerHTML = accumulatedIncome.toString();
+                            })
+                        })
+                    })
+                } else {
+                    window.location.replace('login.html');
+                }
+            }, function(error) {
+                console.error(error);
+            });
+        };
 
-    <!-- Right navbar links -->
-    <ul class="navbar-nav ml-auto">
-      <!-- Messages Dropdown Menu -->
-      <!-- Notifications Dropdown Menu -->
-      <li class="nav-item dropdown">
-        <a class="nav-link" data-toggle="dropdown" href="#">
-          <i class="far fa-bell"></i>
-          <span class="badge badge-warning navbar-badge">7</span>
-        </a>
-        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-          <span class="dropdown-item dropdown-header">7 Notifications</span>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item">
-            <i class="fas fa-utensils mr-2"></i> 3 new orders
-            <span class="float-right text-muted text-sm">3 mins ago</span>
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item">
-            <i class="fas fa-exclamation mr-2"></i> 1 item with empty stock
-            <span class="float-right text-muted text-sm">1 min ago</span>
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item">
-            <i class="fas fa-star mr-2"></i> 3 new ratings
-            <span class="float-right text-muted text-sm">2 days</span>
-          </a>
-          <div class="dropdown-divider"></div>
-          <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
-        </div>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="#">
-          <i class="fas fa-sign-out-alt mr-2"></i>
-          Logout
-        </a>
-    </ul>
-  </nav>
-  <!-- /.navbar -->
+        function checkOrder() {
+            var orderID = window.orderID;
+            var db = firebase.firestore();
+            var order = {
+                id: null,
+                identifier: null,
+                order_items: null,
+                state: null,
+                placed_by: null
+            }
+            db.collection("orders").where("id", "==", orderID).get().then(function(query) {
+                query.forEach(function(doc) {
+                    order.id = doc.data().id;
+                    order.identifier = doc.data().identifier;
+                    order.order_items = doc.data().order_items;
+                    order.message = doc.data().message;
+                    console.log("identifier: ", order.identifier);
+                    var tableRows = '';
+                    db.collection("users_public").where("id", "==", doc.data().user_id).get().then(function(query) {
+                        query.forEach(function(doc) {
+                            order.placed_by = doc.data().username;
+                            for (var i = 0; i < order.order_items.length; i++) {
+                                tableRows += `<tr><td scope="row" style="word-wrap: break-word">` + order.order_items[i].item_title + ` (` + order.order_items[i].item_title_zh + `)</td><td style="text-align:center;">` + order.order_items[i].amounts + `</td><td style="text-align:center;">$` + order.order_items[i].total_price + `</td></tr>`;
+                            }
+                            document.getElementById("topOrderID").innerHTML = order.identifier;
+                            document.getElementById("bottomOrderID").innerHTML = order.identifier;
+                            document.getElementById("username").innerHTML = order.placed_by;
+                            if (order.message) {
+                                document.getElementById("message").innerHTML = order.message;
+                            } else {
+                                document.getElementById("message").innerHTML = 'No message was recorded.';
+                            }
+                            document.getElementById("orderSummaryTable").innerHTML = tableRows;
+                        })
+                    })
+                })
+            })
+        }
 
-  <!-- Main Sidebar Container -->
-  <aside class="main-sidebar sidebar-dark-primary elevation-4">
-    <!-- Brand Logo -->
-    <a href="index3.html" class="brand-link">
-      <img src="dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3"
-           style="opacity: .8">
-      <span class="brand-text font-weight-light">Foobar++</span>
-    </a>
-
-    <!-- Sidebar -->
-    <div class="sidebar">
-      <!-- Sidebar user panel (optional) -->
-      <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-        <div class="image">
-          <img src="dist/img/can.teen.jpg" class="img-circle elevation-2" alt="User Image">
-        </div>
-        <div class="info">
-          <a href="#" class="d-block">LG1 Restaurant</a>
-        </div>
-      </div>
-
-      <!-- Sidebar Menu -->
-      <nav class="mt-2">
-        <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
-          <!-- Add icons to the links using the .nav-icon class
-               with font-awesome or any other icon font library -->
-          <li class="nav-item">
-            <a href="#" class="nav-link active">
-              <i class="nav-icon fas fa-tachometer-alt"></i>
-              <p>
-                Dashboard
-              </p>
-            </a>
-          </li>
-          <li class="nav-header">Orders</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fa fa-shopping-cart"></i>
-              <p>
-                Active orders
-                <span class="badge badge-info right">1</span>
-              </p>
-            </a>
-          </li>
-          <li class="nav-header">Restaurant Information</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-edit"></i>
-              <p>
-                Edit restaurant details
-                <span class="badge badge-info right">1</span>
-              </p>
-            </a>
-          </li>
-          <li class="nav-header">Products</li>
-          <li class="nav-item">
-            <a href="pages/widgets.html" class="nav-link">
-              <i class="nav-icon fas fa-hamburger"></i>
-              <p>
-                Food items
-                <span class="right badge badge-danger">Empty stock!</span>
-              </p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="menu.html" class="nav-link">
-              <i class="nav-icon fas fa-shopping-cart"></i>
-              <p>
-                Menu Contents
-                <span class="badge badge-info right">5</span>
-              </p>
-            </a>
-          </li>
-          <li class="nav-header">Statistics</li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-chart-pie"></i>
-              <p>
-                Order statistics
-              </p>
-            </a>
-          </li>
-          <li class="nav-item">
-            <a href="#" class="nav-link">
-              <i class="nav-icon fas fa-star"></i>
-              <p>
-                Ratings
-              </p>
-            </a>
-          </li>
-      </nav>
-      <!-- /.sidebar-menu -->
-    </div>
-    <!-- /.sidebar -->
-  </aside>
-
-  <!-- Content Wrapper. Contains page content -->
-  <div class="content-wrapper">
-    <!-- Content Header (Page header) -->
-    <div class="content-header">
-      <div class="container-fluid">
-        <div class="row mb-2">
-          <div class="col-sm-6">
-            <h1 class="m-0 text-dark">Dashboard</h1>
-          </div><!-- /.col -->
-          <div class="col-sm-6">
-            <ol class="breadcrumb float-sm-right">
-              <li class="breadcrumb-item"><a href="#">Order Statistics</a></li>
-              <li class="breadcrumb-item"><a href="#">LG1 Restaurant</a></li>
-              <li class="breadcrumb-item active">Dashboard</li>
-            </ol>
-          </div><!-- /.col -->
-        </div><!-- /.row -->
-      </div><!-- /.container-fluid -->
-    </div>
-    <!-- /.content-header -->
-
-    <!-- Main content -->
-    <div class="content">
-      <div class="container-fluid">
-        <div class="row">
-          <div class="col-lg-12">
-            <div class="card">
-              <div class="card-header border-0">
-                <div class="d-flex justify-content-between">
-                  <h3 class="card-title">Income</h3>
-                  <a href="javascript:void(0);">View Report</a>
-                </div>
-              </div>
-              <div class="card-body">
-                <div class="d-flex">
-                </div>
-                <!-- /.d-flex -->
-
-                <div class="position-relative mb-4"><div class="chartjs-size-monitor"><div class="chartjs-size-monitor-expand"><div class=""></div></div><div class="chartjs-size-monitor-shrink"><div class=""></div></div></div>
-                  <canvas id="visitors-chart" height="250" width="437" class="chartjs-render-monitor" style="display: block; height: 150px; width: 350px;"></canvas>
-                </div>
-                <a class="ml-auto d-flex flex-column text-left">
-                    <span class="text-success">
-                      <i class="fas fa-arrow-up"></i> 12.5%
-                    </span>
-                    <span class="text-muted">Since last week</span>
-                  </a>
-                <div class="d-flex flex-row justify-content-end">
-                  <span class="mr-2">
-                    <i class="fas fa-square text-primary"></i> This Week
-                  </span>
-                  <span>
-                    <i class="fas fa-square text-gray"></i> Last Week
-                  </span>
-                </div>
-              </div>
-            </div>
-            <!-- /.card -->
-
-            <div class="card">
-              <div class="card-header border-0">
-                <h3 class="card-title">Products</h3>
-                <div class="card-tools">
-                  <a href="#" class="btn btn-tool btn-sm">
-                    <i class="fas fa-download"></i>
-                  </a>
-                  <a href="#" class="btn btn-tool btn-sm">
-                    <i class="fas fa-bars"></i>
-                  </a>
-                </div>
-              </div>
-              <div class="card-body table-responsive p-0">
-                <table class="table table-striped table-valign-middle">
-                  <thead>
-                  <tr>
-                    <th>Product</th>
-                    <th>Price</th>
-                    <th>Sales</th>
-                    <th>Statistics</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  <tr>
-                    <td>
-                      <img src="dist/img/default-150x150.png" alt="Product 1" class="img-circle img-size-32 mr-2">
-                      Some Product
-                    </td>
-                    <td>$13 USD</td>
-                    <td>
-                      <small class="text-success mr-1">
-                        <i class="fas fa-arrow-up"></i>
-                        12%
-                      </small>
-                      12,000 Sold
-                    </td>
-                    <td>
-                      <span class="sparkline-1"><canvas width="63" height="18" style="display: inline-block; width: 63px; height: 18px; vertical-align: top;"></canvas></span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <img src="dist/img/default-150x150.png" alt="Product 1" class="img-circle img-size-32 mr-2">
-                      Another Product
-                    </td>
-                    <td>$29 USD</td>
-                    <td>
-                      <small class="text-warning mr-1">
-                        <i class="fas fa-arrow-down"></i>
-                        0.5%
-                      </small>
-                      123,234 Sold
-                    </td>
-                    <td>
-                      <a href="#" class="text-muted">
-                        <i class="fas fa-search"></i>
-                      </a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <img src="dist/img/default-150x150.png" alt="Product 1" class="img-circle img-size-32 mr-2">
-                      Amazing Product
-                    </td>
-                    <td>$1,230 USD</td>
-                    <td>
-                      <small class="text-danger mr-1">
-                        <i class="fas fa-arrow-down"></i>
-                        3%
-                      </small>
-                      198 Sold
-                    </td>
-                    <td>
-                      <a href="#" class="text-muted">
-                        <i class="fas fa-search"></i>
-                      </a>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <img src="dist/img/default-150x150.png" alt="Product 1" class="img-circle img-size-32 mr-2">
-                      Perfect Item
-                      <span class="badge bg-danger">NEW</span>
-                    </td>
-                    <td>$199 USD</td>
-                    <td>
-                      <small class="text-success mr-1">
-                        <i class="fas fa-arrow-up"></i>
-                        63%
-                      </small>
-                      87 Sold
-                    </td>
-                    <td>
-                      <a href="#" class="text-muted">
-                        <i class="fas fa-search"></i>
-                      </a>
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-            <!-- /.card -->
-          </div>
-        </div>
-        <!-- /.row -->
-      </div>
-      <!-- /.container-fluid -->
-    </div>
-    <!-- /.content -->
-
-  <!-- /.content-wrapper -->
-  <footer class="main-footer">
-    <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong>
-    All rights reserved.
-    <div class="float-right d-none d-sm-inline-block">
-      <b>Version</b> 3.0.5
-    </div>
-  </footer>
-
-  <!-- Control Sidebar -->
-  <aside class="control-sidebar control-sidebar-dark">
-    <!-- Control sidebar content goes here -->
-  </aside>
-  <!-- /.control-sidebar -->
-</div>
-<!-- ./wrapper -->
-
-
-<!-- jQuery -->
-<script src="plugins/jquery/jquery.min.js"></script>
-<!-- jQuery UI 1.11.4 -->
-<script src="plugins/jquery-ui/jquery-ui.min.js"></script>
-<!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
-<script>
-  $.widget.bridge('uibutton', $.ui.button)
-</script>
-<!-- Bootstrap 4 -->
-<script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="plugins/bootstrap/js/bootstrap.min.js"></script>
-<!-- ChartJS -->
-<script src="plugins/chart.js/Chart.min.js"></script>
-<script src="plugins/chart.js/Chart.js"></script>
-<!-- Sparkline -->
-<script src="plugins/sparklines/sparkline.js"></script>
-<script src="plugins/sparklines/jquery.sparkline.min.js"></script>
-<!-- JQVMap -->
-<script src="plugins/jqvmap/jquery.vmap.min.js"></script>
-<script src="plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
-<!-- jQuery Knob Chart -->
-<script src="plugins/jquery-knob/jquery.knob.min.js"></script>
-<!-- daterangepicker -->
-<script src="plugins/moment/moment.min.js"></script>
-<script src="plugins/daterangepicker/daterangepicker.js"></script>
-<!-- Tempusdominus Bootstrap 4 -->
-<script src="plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
-<!-- Summernote -->
-<script src="plugins/summernote/summernote-bs4.min.js"></script>
-<!-- overlayScrollbars -->
-<script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
-<!-- AdminLTE App -->
-<script src="dist/js/adminlte.js"></script>
-<script src="dist/js/adminlte.min.js"></script>
-<!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-<script src="dist/js/pages/dashboard.js"></script>
-<script src="dist/js/pages/dashboard2.js"></script>
-<script src="dist/js/pages/dashboard3.js"></script>
-<!-- AdminLTE for demo purposes -->
-<script src="dist/js/demo.js"></script>
-<script>
-  $(function () {
-
-    //INITIALIZE SPARKLINE CHARTS
-    $(".sparkline").each(function () {
-      var $this = $(this);
-      $this.sparkline('html', $this.data());
-    });
-
-    /* SPARKLINE DOCUMENTATION EXAMPLES http://omnipotent.net/jquery.sparkline/#s-about */
-    drawDocSparklines();
-    drawMouseSpeedDemo();
-
-  });
-  function drawDocSparklines() {
-
-    // Bar + line composite charts
-    $('#compositebar').sparkline('html', {type: 'bar', barColor: '#aaf'});
-    $('#compositebar').sparkline([4, 1, 5, 7, 9, 9, 8, 7, 6, 6, 4, 7, 8, 4, 3, 2, 2, 5, 6, 7],
-        {composite: true, fillColor: false, lineColor: 'red'});
-
-
-    // Line charts taking their values from the tag
-    $('.sparkline-1').sparkline();
-
-    // Larger line charts for the docs
-    $('.largeline').sparkline('html',
-        {type: 'line', height: '2.5em', width: '4em'});
-
-    // Customized line chart
-    $('#linecustom').sparkline('html',
-        {
-          height: '1.5em', width: '8em', lineColor: '#f00', fillColor: '#ffa',
-          minSpotColor: false, maxSpotColor: false, spotColor: '#77f', spotRadius: 3
+        window.addEventListener('load', function() {
+            initApp();
         });
+    </script>
+    <style>
+        .checked {
+            color: orange;
+        }
+    </style>
 
-    // Bar charts using inline values
-    $('.sparkbar').sparkline('html', {type: 'bar'});
+    <style type="text/css">
+        @keyframes ldio-jvfgw8pv7fi {
+            0% {
+                opacity: 1;
+                backface-visibility: hidden;
+                transform: translateZ(0) scale(1.5, 1.5);
+            }
+            100% {
+                opacity: 0;
+                backface-visibility: hidden;
+                transform: translateZ(0) scale(1, 1);
+            }
+        }
+        
+        .ldio-jvfgw8pv7fi div>div {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #765d69;
+            animation: ldio-jvfgw8pv7fi 1s linear infinite;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(1)>div {
+            left: 148px;
+            top: 88px;
+            animation-delay: -0.875s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(1) {
+            transform: rotate(0deg);
+            transform-origin: 160px 100px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(2)>div {
+            left: 130px;
+            top: 130px;
+            animation-delay: -0.75s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(2) {
+            transform: rotate(45deg);
+            transform-origin: 142px 142px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(3)>div {
+            left: 88px;
+            top: 148px;
+            animation-delay: -0.625s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(3) {
+            transform: rotate(90deg);
+            transform-origin: 100px 160px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(4)>div {
+            left: 46px;
+            top: 130px;
+            animation-delay: -0.5s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(4) {
+            transform: rotate(135deg);
+            transform-origin: 58px 142px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(5)>div {
+            left: 28px;
+            top: 88px;
+            animation-delay: -0.375s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(5) {
+            transform: rotate(180deg);
+            transform-origin: 40px 100px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(6)>div {
+            left: 46px;
+            top: 46px;
+            animation-delay: -0.25s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(6) {
+            transform: rotate(225deg);
+            transform-origin: 58px 58px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(7)>div {
+            left: 88px;
+            top: 28px;
+            animation-delay: -0.125s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(7) {
+            transform: rotate(270deg);
+            transform-origin: 100px 40px;
+        }
+        
+        .ldio-jvfgw8pv7fi div:nth-child(8)>div {
+            left: 130px;
+            top: 46px;
+            animation-delay: 0s;
+        }
+        
+        .ldio-jvfgw8pv7fi>div:nth-child(8) {
+            transform: rotate(315deg);
+            transform-origin: 142px 58px;
+        }
+        
+        .loadingio-spinner-spin-ax7491be6mu {
+            width: 200px;
+            height: 200px;
+            display: inline-block;
+            overflow: hidden;
+            background: none;
+        }
+        
+        .ldio-jvfgw8pv7fi {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            transform: translateZ(0) scale(1);
+            backface-visibility: hidden;
+            transform-origin: 0 0;
+            /* see note above */
+        }
+        
+        .ldio-jvfgw8pv7fi div {
+            box-sizing: content-box;
+        }
+        /* generated by https://loading.io/ */
+    </style>
+</head>
 
-    $('.barformat').sparkline([1, 3, 5, 3, 8], {
-      type: 'bar',
-      tooltipFormat: '{{value:levels}} - {{value}}',
-      tooltipValueLookups: {
-        levels: $.range_map({':2': 'Low', '3:6': 'Medium', '7:': 'High'})
-      }
-    });
+<body class="hold-transition sidebar-mini layout-fixed">
+    <div id='loading_wrap' style='background-color: white; z-index: 9999; position:fixed; height:100%; width:100%; overflow:hidden; top:0; left:0;'>
+        <div style='font-size: 32px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 50%; width: 100%;'>
+            <div class="loadingio-spinner-spin-ax7491be6mu">
+                <div class="ldio-jvfgw8pv7fi">
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                    <div>
+                        <div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div style='font-size: 24px; left: 0; line-height: 200px; margin-top: -100px; position: absolute; text-align: center; top: 75%; width: 100%;'>
+            Loading, please wait...
+        </div>
+    </div>
+    <div class="wrapper">
 
-    // Tri-state charts using inline values
-    $('.sparktristate').sparkline('html', {type: 'tristate'});
-    $('.sparktristatecols').sparkline('html',
-        {type: 'tristate', colorMap: {'-2': '#fa7', '2': '#44f'}});
+        <!-- Navbar -->
+        <nav class="main-header navbar navbar-expand navbar-white navbar-light">
+            <!-- Left navbar links -->
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" data-widget="pushmenu" href="#" role="button"><i class="fas fa-bars"></i></a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="index.html" class="nav-link">Home</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="" class="nav-link" id="topBarOrderLink">Orders</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="editRest.html" class="nav-link">Edit Restaurant</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="foodItems.html" class="nav-link">Food Items</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="menu.html" class="nav-link">Menu</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="stats.html" class="nav-link">Order History</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="ratings.html" class="nav-link">Ratings</a>
+                </li>
+            </ul>
+            <!-- Right navbar links -->
+            <ul class="navbar-nav ml-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="#" id="logout">
+                        <i class="fas fa-sign-out-alt mr-2"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+        <!-- /.navbar -->
 
-    // Composite line charts, the second using values supplied via javascript
-    $('#compositeline').sparkline('html', {fillColor: false, changeRangeMin: 0, chartRangeMax: 10});
-    $('#compositeline').sparkline([4, 1, 5, 7, 9, 9, 8, 7, 6, 6, 4, 7, 8, 4, 3, 2, 2, 5, 6, 7],
-        {composite: true, fillColor: false, lineColor: 'red', changeRangeMin: 0, chartRangeMax: 10});
+        <!-- Main Sidebar Container -->
+        <aside class="main-sidebar sidebar-dark-primary elevation-4">
+            <!-- Brand Logo -->
+            <a href="index.html" class="brand-link">
+                <span class="brand-text font-weight-light">Foobar++ Dashboard</span>
+            </a>
 
-    // Line charts with normal range marker
-    $('#normalline').sparkline('html',
-        {fillColor: false, normalRangeMin: -1, normalRangeMax: 8});
-    $('#normalExample').sparkline('html',
-        {fillColor: false, normalRangeMin: 80, normalRangeMax: 95, normalRangeColor: '#4f4'});
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <!-- Sidebar user panel (optional) -->
+                <div class="user-panel mt-3 pb-3 mb-3 d-flex">
+                    <div class="info">
+                        <a id="emailAddrSideBar" href="#" class="d-block"></a>
+                    </div>
+                </div>
 
-    // Discrete charts
-    $('.discrete1').sparkline('html',
-        {type: 'discrete', lineColor: 'blue', xwidth: 18});
-    $('#discrete2').sparkline('html',
-        {type: 'discrete', lineColor: 'blue', thresholdColor: 'red', thresholdValue: 4});
+                <!-- Sidebar Menu -->
+                <nav class="mt-2">
+                    <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
+                        <!-- Add icons to the links using the .nav-icon class
+               with font-awesome or any other icon font library -->
+                        <li class="nav-item">
+                            <a href="index.html" class="nav-link">
+                                <i class="nav-icon fas fa-tachometer-alt"></i>
+                                <p>
+                                    Dashboard
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Orders</li>
+                        <li class="nav-item">
+                            <a href="orders.html" class="nav-link" id="activeOrderLink">
+                                <i class="nav-icon fa fa-shopping-cart"></i> Active orders
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Restaurant Information</li>
+                        <li class="nav-item">
+                            <a href="editRest.html" class="nav-link">
+                                <i class="nav-icon fas fa-edit"></i>
+                                <p>
+                                    Edit restaurant details
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Products</li>
+                        <li class="nav-item">
+                            <a href="foodItems.html" class="nav-link">
+                                <i class="nav-icon fas fa-hamburger"></i>
+                                <p id="emptyFoodItemsBadge">
+                                    Food items
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="menu.html" class="nav-link">
+                                <i class="nav-icon fas fa-shopping-cart"></i>
+                                <p>
+                                    Menu Contents
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Statistics</li>
+                        <li class="nav-item">
+                            <a href="stats.html" class="nav-link active">
+                                <i class="nav-icon fa fa-shopping-cart"></i>
+                                <p>
+                                    Order History
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a href="ratings.html" class="nav-link">
+                                <i class="nav-icon fas fa-star"></i>
+                                <p>
+                                    Ratings
+                                </p>
+                            </a>
+                        </li>
+                        <li class="nav-header">Restaurant Status</li>
+                        <li class="nav-item">
+                            <a href="#" class="nav-link">
+                                <button type="button" class="btn btn-success" id="restOnline" onclick="toggleRestOnline()">Opened!</button>
+                            </a>
+                        </li>
+                </nav>
+                <!-- /.sidebar-menu -->
+            </div>
+            <!-- /.sidebar -->
+        </aside>
 
-    // Bullet charts
-    $('.sparkbullet').sparkline('html', {type: 'bullet'});
+        <!-- Content Wrapper. Contains page content -->
+        <div class="content-wrapper">
+            <!-- Content Header (Page header) -->
+            <div class="content-header">
+                <div class="container-fluid">
+                    <div class="row mb-2">
+                        <div class="col-sm-6">
+                            <h1 class="m-0 text-dark">Historical Orders</h1>
+                        </div>
+                        <!-- /.col -->
+                        <div class="col-sm-6">
+                            <ol class="breadcrumb float-sm-right">
+                                <li id="emailAddrTopNav" class="breadcrumb-item">
+                                </li>
+                                <li class="breadcrumb-item active">Order History</li>
+                            </ol>
+                        </div>
+                        <!-- /.col -->
+                    </div>
+                    <!-- /.row -->
+                </div>
+                <!-- /.container-fluid -->
+            </div>
+            <!-- /.content-header -->
 
-    // Pie charts
-    $('.sparkpie').sparkline('html', {type: 'pie', height: '1.0em'});
+            <!-- Main content -->
+            <section class="content">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Breakdown of Historical Orders</h3>
+                                </div>
+                                <div class="card-body">
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Customer Username</th>
+                                                <th>Order ID</th>
+                                                <th>Income</th>
+                                                <th>Details</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="historyOrderTable">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="card-footer">
+                                    Total Income: $<span id="totalIncome"></span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Order Details</h3>
+                                </div>
+                                <div class="card-body">
+                                    <div class="card card-primary">
+                                        <div class="card-header" style="background-color: #765D69;">
+                                            <h3 class="card-title"><strong>Order # <span id="topOrderID"></strong></h3>
+                                        </div>
+                                        <div class="card-body" style="display: block;">
+                                            <h4 style="text-align: center;">#<span style="color: #765D69; font-size: 38px" id="bottomOrderID"></span>
+                                            </h4>
+                                            <table class="table table-borderless">
+                                                <tr>
+                                                    <td><strong>Created by:</strong></td>
+                                                    <td><span id="username"></span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Message:</td>
+                                                    <td><span id="message"></span></td>
+                                            </table>
+                                            <hr>
+                                            <h4 style="text-align: center; font-weight:bold;">Order Summary</h4>
+                                            <table class="table table-striped" style="table-layout: fixed; width: 100%">
+                                                <thead>
+                                                    <tr>
+                                                        <th scope="col" style="width: 60%;">Item</th>
+                                                        <th scope="col" style="width: 20%; text-align:center;">Pcs.</th>
+                                                        <th scope="col" style="width: 20%; text-align:center;">Price
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="orderSummaryTable">
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="card-footer">
+                                    Please select an order from the left to see its details.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+        <footer class="main-footer">
+            <div class="float-right d-none d-sm-block">
+                <b>Version</b> 3.0.5
+            </div>
+            <strong>Copyright &copy; 2014-2019 <a href="http://adminlte.io">AdminLTE.io</a>.</strong> All rights reserved.
+                                                        </footer>
 
-    // Box plots
-    $('.sparkboxplot').sparkline('html', {type: 'box'});
-    $('.sparkboxplotraw').sparkline([1, 3, 5, 8, 10, 15, 18],
-        {type: 'box', raw: true, showOutliers: true, target: 6});
+                                                        <!-- Control Sidebar -->
+                                                        <aside class="control-sidebar control-sidebar-dark">
+                                                            <!-- Control sidebar content goes here -->
+                                                        </aside>
+                                                        <!-- /.control-sidebar -->
+                                        </div>
+                                        <!-- ./wrapper -->
+                                        <script>
+                                            function toggleRestOnline() {
+                                                var db = firebase.firestore();
+                                                var user = firebase.auth().currentUser;
+                                                db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                                                    queryResult.forEach(function(doc) {
+                                                        if (doc.data().online) {
+                                                            db.collection("sellers").doc(doc.data().id).update({
+                                                                online: false
+                                                            }).then(function() {
+                                                                $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                                                                $('#restOnline').html('Closed');
+                                                            });
+                                                        } else {
+                                                            db.collection("sellers").doc(doc.data().id).update({
+                                                                online: true
+                                                            }).then(function() {
+                                                                $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                                                                $('#restOnline').html('Open');
+                                                            });
+                                                        }
+                                                    });
+                                                });
+                                            }
+                                        </script>
 
-    // Box plot with specific field order
-    $('.boxfieldorder').sparkline('html', {
-      type: 'box',
-      tooltipFormatFieldlist: ['med', 'lq', 'uq'],
-      tooltipFormatFieldlistKey: 'field'
-    });
+                                        <script>
+                                            $("body").on("click", ".checkOrder", function() {
+                                                window.orderID = this.id;
+                                                console.log(window.orderID);
+                                                checkOrder();
+                                            })
+                                        </script>
 
-    // click event demo sparkline
-    $('.clickdemo').sparkline();
-    $('.clickdemo').bind('sparklineClick', function (ev) {
-      var sparkline = ev.sparklines[0],
-          region = sparkline.getCurrentRegionFields();
-      value = region.y;
-      alert("Clicked on x=" + region.x + " y=" + region.y);
-    });
-
-    // mouseover event demo sparkline
-    $('.mouseoverdemo').sparkline();
-    $('.mouseoverdemo').bind('sparklineRegionChange', function (ev) {
-      var sparkline = ev.sparklines[0],
-          region = sparkline.getCurrentRegionFields();
-      value = region.y;
-      $('.mouseoverregion').text("x=" + region.x + " y=" + region.y);
-    }).bind('mouseleave', function () {
-      $('.mouseoverregion').text('');
-    });
-  }
-</script>
+                                        <script>
+                                            var logoutBtn = document.getElementById('logout');
+                                            logoutBtn.onclick = function() {
+                                                firebase.auth().signOut().then(function() {
+                                                    //window.location.replace("login.html");
+                                                });
+                                            }
+                                        </script>
+                                        <!-- jQuery -->
+                                        <script src="plugins/jquery/jquery.min.js"></script>
+                                        <!-- jQuery UI 1.11.4 -->
+                                        <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+                                        <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+                                        <script>
+                                            $.widget.bridge('uibutton', $.ui.button)
+                                        </script>
+                                        <!-- Bootstrap 4 -->
+                                        <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+                                        <!-- ChartJS -->
+                                        <script src="plugins/chart.js/Chart.min.js"></script>
+                                        <!-- Sparkline -->
+                                        <script src="plugins/sparklines/sparkline.js"></script>
+                                        <!-- JQVMap -->
+                                        <script src="plugins/jqvmap/jquery.vmap.min.js"></script>
+                                        <script src="plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+                                        <!-- jQuery Knob Chart -->
+                                        <script src="plugins/jquery-knob/jquery.knob.min.js"></script>
+                                        <!-- daterangepicker -->
+                                        <script src="plugins/moment/moment.min.js"></script>
+                                        <script src="plugins/daterangepicker/daterangepicker.js"></script>
+                                        <!-- Tempusdominus Bootstrap 4 -->
+                                        <script src="plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+                                        <!-- Summernote -->
+                                        <script src="plugins/summernote/summernote-bs4.min.js"></script>
+                                        <!-- overlayScrollbars -->
+                                        <script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+                                        <!-- AdminLTE App -->
+                                        <script src="dist/js/adminlte.js"></script>
+                                        <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+                                        <script src="dist/js/pages/dashboard.js"></script>
+                                        <!-- AdminLTE for demo purposes -->
+                                        <script src="dist/js/demo.js"></script>
 </body>
+
 </html>

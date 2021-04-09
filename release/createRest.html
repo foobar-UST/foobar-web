@@ -120,12 +120,13 @@
                                     <div class="form-group">
                                         <label>Restaurant Category (can choose more than one):</label>
                                         <select class="duallistbox" multiple="multiple" id='restTags'>
-                                            <option>Chinese</option>
-                                            <option>Japanese</option>
-                                            <option>Korean</option>
-                                            <option>Western</option>
-                                            <option>American</option>
-                                            <option>European</option>
+                                            <option>chinese</option>
+                                            <option>japanese</option>
+                                            <option>korean</option>
+                                            <option>western</option>
+                                            <option>american</option>
+                                            <option>european</option>
+                                            <option>indian</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
@@ -262,7 +263,6 @@
                 var _restAddr = $('#restAddr').val();
                 var _restAddrZH = $('#restAddrZH').val();
                 var _user_id = firebase.auth().currentUser.uid;
-                console.log(sellerDoc);
                 var db = firebase.firestore();
                 var newSellerDoc = db.collection("sellers").doc();
                 var newSellerDocID = newSellerDoc.id;
@@ -282,8 +282,15 @@
                     image_url: null,
                     min_spend: _minSpend,
                     delivery_cost: 0,
-                    rating: 0.0,
-                    rating_count: 0,
+                    order_rating: 0.0,
+                    delivery_rating: 0.0,
+                    rating_count: {
+                        excellent: 0,
+                        very_good: 0,
+                        good: 0,
+                        fair: 0,
+                        poor: 0
+                    },
                     type: _type,
                     online: false,
                     notice: null,

@@ -35,11 +35,12 @@
     <!-- jQuery UI 1.11.4 -->
     <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-app.js"></script>
-
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/uuid/8.3.2/uuid.min.js" integrity="sha512-UNM1njAgOFUa74Z0bADwAq8gbTcqZC8Ej4xPSzpnh0l6KMevwvkBvbldF9uR++qKeJ+MOZHRjV1HZjoRvjDfNQ==" crossorigin="anonymous"></script>
     <!-- If you enabled Analytics in your project, add the Firebase SDK for Analytics -->
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-analytics.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-firestore.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/7.22.0/firebase-storage.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         // Your web app's Firebase configuration
@@ -88,6 +89,11 @@
                                 console.log("SELLER LINK ERROR");
                             } else {
                                 querySnapshot.forEach(function(doc) {
+                                    if (doc.data().type == 1) {
+                                        $("#activeOrderLink").attr("href", "/order_off_campus.html");
+                                    } else {
+                                        $("#activeOrderLink").attr("href", "/order_on_campus.html");
+                                    }
                                     sellerInfo.obj = doc.data() || {};
                                     document.getElementById("emailAddrSideBar").innerText = sellerInfo.obj.name;
                                     document.getElementById("emailAddrTopNav").innerText = sellerInfo.obj.name;
@@ -180,67 +186,71 @@
         }
 
         function dateFormator(datetime, format) {
-          return moment(datetime).format(format);
+            return moment(datetime).format(format);
         }
 
         function toggleAvailibility(sectionId, originalState, availibility) {
-          var db = firebase.firestore();
-          var user = firebase.auth().currentUser;
-          db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
-            queryResult.forEach(async function(doc) {
-              db.collection("sellers").doc(doc.data().id).collection('sections').doc(sectionId).update({
-                available: availibility,
-              }).then(function() {
-                let button = document.getElementById(sectionId + '_avail');
-                let cardColor = document.getElementById(sectionId + '_cardColor');
-                if (availibility) {
-                  button.innerHTML = `<button class="btn btn-sm btn-success active" onclick="toggleAvailibility('` + sectionId + `', '` + originalState + `', false)">
+            var db = firebase.firestore();
+            var user = firebase.auth().currentUser;
+            db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                queryResult.forEach(async function(doc) {
+                    db.collection("sellers").doc(doc.data().id).collection('sections').doc(sectionId).update({
+                        available: availibility,
+                    }).then(function() {
+                        let button = document.getElementById(sectionId + '_avail');
+                        let cardColor = document.getElementById(sectionId + '_cardColor');
+                        if (availibility) {
+                            button.innerHTML = `<button class="btn btn-sm btn-success active" onclick="toggleAvailibility('` + sectionId + `', '` + originalState + `', false)">
                                         Available  <i class="fas fa-check-circle"></i>
                                       </button>`;
-                  cardColor.className = "card " + card_color[originalState];
+                            cardColor.className = "card " + card_color[originalState];
 
-                } else {
-                  button.innerHTML = `<button class="btn btn-sm btn-danger active" onclick="toggleAvailibility('` + sectionId + `', '` + originalState + `', true)">
+                        } else {
+                            button.innerHTML = `<button class="btn btn-sm btn-danger active" onclick="toggleAvailibility('` + sectionId + `', '` + originalState + `', true)">
                                         Not Available  <i class="fas fa-times-circle"></i>
                                       </button>`;
-                  cardColor.className = "card " + card_color.not_available;
-                }
-              });
+                            cardColor.className = "card " + card_color.not_available;
+                        }
+                    });
+                });
             });
-          });
         }
 
         function createSectionCard(section) {
             let seller = window.sellerInfo;
             if (section.state == "5_delivered" || section.state == "4_ready_for_pick_up") {
-              return;
+                return;
             }
             var row = document.createElement('div');
             let badge = `<span class="badge badge-secondary">` + dateFormator(section.cutoff_time.toDate(), "(ddd) Do MMMM YYYY h:mm:ss a") + `</span>`;
             if (moment().isAfter(section.cutoff_time.toDate())) {
-              badge = `<span class="badge badge-danger">` + dateFormator(section.cutoff_time.toDate(), "(ddd) Do MMMM YYYY h:mm:ss a") + `</span>`;
+                badge = `<span class="badge badge-danger">` + dateFormator(section.cutoff_time.toDate(), "(ddd) Do MMMM YYYY h:mm:ss a") + `</span>`;
             }
             let button = `<button class="btn btn-sm btn-success active" onclick="toggleAvailibility('` + section.id + `', '` + section.state + `', false)">
                             Available  <i class="fas fa-check-circle"></i>
                           </button>`;
             let cardColor = card_color[section.state];
             if (!section.available) {
-              button = `<button class="btn btn-sm btn-danger active" onclick="toggleAvailibility('` + section.id + `', '` + section.state + `', true)">
+                button = `<button class="btn btn-sm btn-danger active" onclick="toggleAvailibility('` + section.id + `', '` + section.state + `', true)">
                           Not Available  <i class="fas fa-times-circle"></i>
                         </button>`;
-              cardColor = card_color.not_available;
+                cardColor = card_color.not_available;
             }
             let isDisabled = "";
             let isShipped = "Proceed";
             if (section.state == "3_shipped") {
-              isDisabled = "disabled";
-              isShipped = "Shipped";
+                isDisabled = "disabled";
+                isShipped = "Shipped";
+            }
+            if (section.state == "2_preparing") {
+                isDisabled = "disabled";
+                isShipped = "Preparing";
             }
             row.className = 'row';
             row.innerHTML = `<div class="col-md-12">
                         <div class="card ` + cardColor + `" id="` + section.id + `_cardColor">
                           <div class="card-header">
-                            <h3 class="card-title" style="padding-right: 10px;">`+ section.title + ' | ' + section.title_zh + `</h3>` + badge + `
+                            <h3 class="card-title" style="padding-right: 10px;">` + section.title + ' | ' + section.title_zh + `</h3>` + badge + `
                             <div class="card-tools">
                               <table>
                                 <tr>
@@ -266,164 +276,166 @@
         }
 
         function timestampCreator(datetime) {
-          if (datetime === "") return "";
-          let time = moment(datetime).unix();
-          return new firebase.firestore.Timestamp(time, 0);
+            if (datetime === "") return "";
+            let time = moment(datetime).unix();
+            return new firebase.firestore.Timestamp(time, 0);
         }
 
-        function addItem () {
-          let currentUser = window.sellerInfo;
-          let location = document.getElementById('update-location').value;
-          let checker = {
-            title: $("#update-name").val(),
-            title_zh: $("#update-name-ch").val(),
-            description: $("#update-descrip").val(),
-            description_zh: $("#update-descrip-ch").val(),
-            max_user: parseInt($("#update-max-order").val()),
-            available: false,
-            updated_at: firebase.firestore.FieldValue.serverTimestamp(),
-            cutoff_time: timestampCreator($("#update-cutofftime").val()),
-            deliverer_id: null,
-            deliverer_location: null,
-            deliverer_travel_mode: null,
-            delivery_cost: parseInt($("#update-delivery-cost").val()),
-            delivery_location: delivery_location[location],
-            delivery_time: timestampCreator($("#update-delivery-time").val()),
-            joined_users_count: 0,
-            joined_users_ids: [],
-            seller_id: currentUser.obj.id,
-            seller_name: currentUser.obj.name,
-            seller_name_zh: currentUser.obj.name_zh,
-            state: "0_available",
-          }
-
-          let errorText = document.getElementById("addItemError");
-          for (element of Object.keys(checker)) {
-            if (checker[element] == "") {
-              if (element == "description" || element == "description_zh") {
-                checker[element] = null;
-                continue;
-              }
-              if (element == "joined_users_count" || element == "joined_users_ids") continue;
-              errorText.style.display = "block";
-              console.log(element);
-              console.log(checker[element]);
-              return;
+        function addItem() {
+            let currentUser = window.sellerInfo;
+            let location = document.getElementById('update-location').value;
+            let checker = {
+                title: $("#update-name").val(),
+                title_zh: $("#update-name-ch").val(),
+                description: $("#update-descrip").val(),
+                description_zh: $("#update-descrip-ch").val(),
+                max_users: parseInt($("#update-max-order").val()),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                cutoff_time: timestampCreator($("#update-cutofftime").val()),
+                deliverer_id: null,
+                deliverer_location: null,
+                deliverer_travel_mode: null,
+                delivery_cost: parseInt($("#update-delivery-cost").val()),
+                delivery_location: delivery_location[location],
+                delivery_time: timestampCreator($("#update-delivery-time").val()),
+                joined_users_count: 0,
+                joined_users_ids: [],
+                group_id: uuid.v4(),
+                seller_id: currentUser.obj.id,
+                seller_name: currentUser.obj.name,
+                seller_name_zh: currentUser.obj.name_zh,
+                state: "0_available",
             }
-          }
-          errorText.style.display = "none";
 
-          db.collection("sellers").doc(currentUser.obj.id).collection("sections")
-          .add(checker).then( function (docRef) {
-            db.collection("sellers").doc(currentUser.obj.id).collection("sections").doc(docRef.id).update({
-              id: docRef.id
-            }).then(function() {
-              if (document.getElementById('update-image').files.length > 0) {
-                  var path_filename = 'section_images/' + docRef.id + '.jpg';
-                  var imageElement = document.getElementById("update-image");
-                  var imageToUpload = imageElement.files[0];
-                  var storageRef = firebase.storage().ref();
-                  var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
-                  imageUploadTask.on('state_changed', function(snapshot) {
-                      console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
-                      var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                      console.log('Upload is ' + progress + '% done');
-                      switch (snapshot.state) {
-                          case firebase.storage.TaskState.PAUSED: // or 'paused'
-                              console.log('Upload is paused');
-                              break;
-                          case firebase.storage.TaskState.RUNNING: // or 'running'
-                              console.log('Upload is running');
-                              break;
-                      }
-                  }, function(error) {
-                      console.log('Upload is unsuccessful.');
-                  }, function() {
-                      $("#editOrAddModal").modal('hide')
-                      refreshPage();
-                  });
-              } else {
-                  $("#editOrAddModal").modal('hide')
-                  refreshPage();
-              }
-            })
-            .catch(function(error) {
-                console.error("Error updating food item record: ", error);
+            let errorText = document.getElementById("addItemError");
+            for (element of Object.keys(checker)) {
+                if (checker[element] == "") {
+                    if (element == "description" || element == "description_zh") {
+                        checker[element] = null;
+                        continue;
+                    }
+                    if (element == "joined_users_count" || element == "joined_users_ids") continue;
+                    errorText.style.display = "block";
+                    console.log(element);
+                    console.log(checker[element]);
+                    return;
+                }
+            }
+            errorText.style.display = "none";
+            var db = firebase.firestore();
+            db.collection("sellers").doc(currentUser.obj.id).collection("sections")
+                .set(checker).then(function(docRef) {
+                    db.collection("sellers").doc(currentUser.obj.id).collection("sections").doc(docRef.id).update({
+                            id: docRef.id
+                        }).then(function() {
+                            if (document.getElementById('update-image').files.length > 0) {
+                                var path_filename = 'section_images/' + docRef.id + '.jpg';
+                                var imageElement = document.getElementById("update-image");
+                                var imageToUpload = imageElement.files[0];
+                                var storageRef = firebase.storage().ref();
+                                var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                                imageUploadTask.on('state_changed', function(snapshot) {
+                                    console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                                    var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                                    console.log('Upload is ' + progress + '% done');
+                                    switch (snapshot.state) {
+                                        case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                            console.log('Upload is paused');
+                                            break;
+                                        case firebase.storage.TaskState.RUNNING: // or 'running'
+                                            console.log('Upload is running');
+                                            break;
+                                    }
+                                }, function(error) {
+                                    console.log('Upload is unsuccessful.');
+                                }, function() {
+                                    $("#editOrAddModal").modal('hide')
+                                    refreshPage();
+                                });
+                            } else {
+                                $("#editOrAddModal").modal('hide')
+                                refreshPage();
+                            }
+                        })
+                        .catch(function(error) {
+                            console.error("Error updating food item record: ", error);
+                        });
+                })
+                .catch(function(error) {
+                    console.error("Error adding food item record: ", error);
+                });
+        }
+
+        function editItem() {
+            let currentUser = window.sellerInfo;
+            let itemId = document.getElementById('editOrAddModal_title').innerHTML;
+            if (itemId == "Timeslot") {
+                return;
+            }
+            let location = document.getElementById('update-location').value;
+            let checker = {
+                title: $("#update-name").val(),
+                title_zh: $("#update-name-ch").val(),
+                description: $("#update-descrip").val(),
+                description_zh: $("#update-descrip-ch").val(),
+                max_users: parseInt($("#update-max-order").val()),
+                updated_at: firebase.firestore.FieldValue.serverTimestamp(),
+                cutoff_time: timestampCreator($("#update-cutofftime").val()),
+                delivery_cost: parseInt($("#update-delivery-cost").val()),
+                delivery_location: delivery_location[location],
+                delivery_time: timestampCreator($("#update-delivery-time").val()),
+            }
+            let itemObj = {}
+            Object.keys(checker).forEach(function(element) {
+                if (element == "description" || element == "description_zh") {
+                    if (checker[element] == "") {
+                        itemObj[element] == null;
+                    }
+                } else if (checker[element] !== "") {
+                    itemObj[element] = checker[element];
+                }
             });
-          })
-          .catch(function(error) {
-              console.error("Error adding food item record: ", error);
-          });
-        }
+            db.collection("sellers").doc(currentUser.obj.id).collection("sections")
+                .doc(itemId).update(itemObj).then(function() {
+                    if (document.getElementById('update-image').files.length > 0) {
+                        var path_filename = 'sections_images/' + itemId + '.jpg';
+                        var imageElement = document.getElementById("update-image");
+                        var imageToUpload = imageElement.files[0];
+                        var storageRef = firebase.storage().ref();
+                        var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
+                        imageUploadTask.on('state_changed', function(snapshot) {
+                            console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
+                            var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                            console.log('Upload is ' + progress + '% done');
+                            switch (snapshot.state) {
+                                case firebase.storage.TaskState.PAUSED: // or 'paused'
+                                    console.log('Upload is paused');
+                                    break;
+                                case firebase.storage.TaskState.RUNNING: // or 'running'
+                                    console.log('Upload is running');
+                                    break;
+                            }
+                        }, function(error) {
+                            console.log('Upload is unsuccessful.');
+                        }, function() {
+                            $("#editOrAddModal").modal('hide')
+                            refreshPage();
+                        });
+                    } else {
+                        $("#editOrAddModal").modal('hide')
+                        refreshPage();
+                    }
 
-        function editItem () {
-          let currentUser = window.sellerInfo;
-          let itemId = document.getElementById('editOrAddModal_title').innerHTML;
-          if (itemId == "Timeslot") { return; }
-          let location = document.getElementById('update-location').value;
-          let checker = {
-            title: $("#update-name").val(),
-            title_zh: $("#update-name-ch").val(),
-            description: $("#update-descrip").val(),
-            description_zh: $("#update-descrip-ch").val(),
-            max_user: parseInt($("#update-max-order").val()),
-            updated_at: firebase.firestore.FieldValue.serverTimestamp(),
-            cutoff_time: timestampCreator($("#update-cutofftime").val()),
-            delivery_cost: parseInt($("#update-delivery-cost").val()),
-            delivery_location: delivery_location[location],
-            delivery_time: timestampCreator($("#update-delivery-time").val()),
-          }
-          let itemObj = {}
-          Object.keys(checker).forEach( function (element) {
-            if (element == "description" || element == "description_zh") {
-              if (checker[element] == "") {
-                itemObj[element] == null;
-              }
-            } else if (checker[element] !== "") {
-              itemObj[element] = checker[element];  
-            }
-          });
-          db.collection("sellers").doc(currentUser.obj.id).collection("sections")
-          .doc(itemId).update(itemObj).then(function() {
-              if (document.getElementById('update-image').files.length > 0) {
-                  var path_filename = 'sections_images/' + docRef.id + '.jpg';
-                  var imageElement = document.getElementById("update-image");
-                  var imageToUpload = imageElement.files[0];
-                  var storageRef = firebase.storage().ref();
-                  var imageUploadTask = storageRef.child(path_filename).put(imageToUpload);
-                  imageUploadTask.on('state_changed', function(snapshot) {
-                      console.log('snapshot.totalBytes: ' + snapshot.totalBytes);
-                      var progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                      console.log('Upload is ' + progress + '% done');
-                      switch (snapshot.state) {
-                          case firebase.storage.TaskState.PAUSED: // or 'paused'
-                              console.log('Upload is paused');
-                              break;
-                          case firebase.storage.TaskState.RUNNING: // or 'running'
-                              console.log('Upload is running');
-                              break;
-                      }
-                  }, function(error) {
-                      console.log('Upload is unsuccessful.');
-                  }, function() {
-                    $("#editOrAddModal").modal('hide')
-                    refreshPage();
-                  });
-              } else {
-                $("#editOrAddModal").modal('hide')
-                refreshPage();
-              }
-
-          })
-          .catch(function(error) {
-              console.error("Error updating food item record: ", error);
-          });
+                })
+                .catch(function(error) {
+                    console.error("Error updating food item record: ", error);
+                });
         }
 
         function addOrEditItem() {
-          let header = document.getElementById('editOrAddModal_title');
-          if (header.innerHTML == "New Timeslot") addItem();
-          else editItem();
+            let header = document.getElementById('editOrAddModal_title');
+            if (header.innerHTML == "New Timeslot") addItem();
+            else editItem();
         }
 
         function refreshPage() {
@@ -450,133 +462,161 @@
             })
         }
 
-        function prepInsert (newTimeslot, sectionId) {
-          let header = document.getElementById('editOrAddModal_title');
-          if (newTimeslot === true) {
-            header.innerHTML = "New Timeslot";
-            return;
-          }
-          let db = firebase.firestore();
-          let currentUser = window.sellerInfo;
-          let section;
-          db.collection("sellers").doc(currentUser.obj.id).collection('sections').doc(sectionId).get().then((section) => {
-            section = section.data();
-            console.log(section);
+        function prepInsert(newTimeslot, sectionId) {
+            let header = document.getElementById('editOrAddModal_title');
+            let errorText = document.getElementById("addItemError");
+            errorText.style.display = "none";
+            if (newTimeslot === true) {
+                header.innerHTML = "New Timeslot";
+                let insertTitle = document.getElementById('update-name');
+                insertTitle.value = "";
+
+                let insertTitleCH = document.getElementById('update-name-ch');
+                insertTitleCH.value = "";
+
+                let insertDescrip = document.getElementById('update-descrip');
+                insertDescrip.value = "";
+
+                let insertDescripCH = document.getElementById('update-descrip-ch');
+                insertDescripCH.value = "";
+
+                let insertPrice = document.getElementById('update-delivery-cost');
+                insertPrice.value = "";
+
+                let insertMaxUsers = document.getElementById('update-max-order');
+                insertMaxUsers.value = "";
+
+                let insertLocation = document.getElementById('update-location');
+                insertLocation.value = 'atrium';
+
+                let insertDTime = document.getElementById('update-delivery-time');
+                insertDTime.value = ""
+
+                let insertCOTime = document.getElementById('update-cutofftime');
+                insertCOTime.value = ""
+                return;
+            }
+            let db = firebase.firestore();
+            let currentUser = window.sellerInfo;
+            let section;
+            db.collection("sellers").doc(currentUser.obj.id).collection('sections').doc(sectionId).get().then((section) => {
+                section = section.data();
+                console.log(section);
+                header.innerHTML = sectionId;
+                let insertTitle = document.getElementById('update-name');
+                insertTitle.value = section.title;
+
+                let insertTitleCH = document.getElementById('update-name-ch');
+                insertTitleCH.value = section.title_zh;
+
+                let insertDescrip = document.getElementById('update-descrip');
+                insertDescrip.value = section.description;
+
+                let insertDescripCH = document.getElementById('update-descrip-ch');
+                insertDescripCH.value = section.description_zh;
+
+                let insertPrice = document.getElementById('update-delivery-cost');
+                insertPrice.value = section.delivery_cost;
+
+                let insertMaxUsers = document.getElementById('update-max-order');
+                insertMaxUsers.value = section.max_users;
+
+                let insertLocation = document.getElementById('update-location');
+                insertLocation.value = 'atrium';
+
+                let insertDTime = document.getElementById('update-delivery-time');
+                insertDTime.value = dateFormator(section.delivery_time.toDate(), "YYYY-MM-DDTHH:mm")
+
+                let insertCOTime = document.getElementById('update-cutofftime');
+                insertCOTime.value = dateFormator(section.cutoff_time.toDate(), "YYYY-MM-DDTHH:mm")
+            })
+        }
+
+        function prepInsertProceed(sectionId, state) {
+            let header = document.getElementById('proceedSectionId');
             header.innerHTML = sectionId;
-            let insertTitle = document.getElementById('update-name');
-            insertTitle.value = section.title;
 
-            let insertTitleCH = document.getElementById('update-name-ch');
-            insertTitleCH.value = section.title_zh;
+            let from = document.getElementById('fromState');
+            from.innerHTML = state_mapping[state];
+            from.className = state_to_badge[state];
 
-            let insertDescrip = document.getElementById('update-descrip');
-            insertDescrip.value = section.description;
+            let to = document.getElementById('toState');
+            to.innerHTML = state_mapping[next_state[state]];
+            to.className = state_to_badge[next_state[state]];
 
-            let insertDescripCH = document.getElementById('update-descrip-ch');
-            insertDescripCH.value = section.description_zh;
-
-            let insertPrice = document.getElementById('update-delivery-cost');
-            insertPrice.value = section.delivery_cost;
-
-            let insertMaxUsers = document.getElementById('update-max-order');
-            insertMaxUsers.value = section.max_users;
-
-            let insertLocation = document.getElementById('update-location');
-            insertLocation.value = 'atrium';
-
-            let insertDTime = document.getElementById('update-delivery-time');
-            insertDTime.value = dateFormator(section.delivery_time.toDate(), "YYYY-MM-DDTHH:mm")
-
-            let insertCOTime = document.getElementById('update-cutofftime');
-            insertCOTime.value = dateFormator(section.cutoff_time.toDate(), "YYYY-MM-DDTHH:mm")
-          })
+            let errorText = document.getElementById("proceedError");
+            errorText.style.display = "none";
         }
 
-        function prepInsertProceed (sectionId, state) {
-          let header = document.getElementById('proceedSectionId');
-          header.innerHTML = sectionId;
-
-          let from = document.getElementById('fromState');
-          from.innerHTML = state_mapping[state];
-          from.className = state_to_badge[state];
-
-          let to = document.getElementById('toState');
-          to.innerHTML = state_mapping[next_state[state]];
-          to.className = state_to_badge[next_state[state]];
-
-          let errorText = document.getElementById("proceedError");
-          errorText.style.display = "none";
-        }
-
-        function proceedSection () {
-          let errorText = document.getElementById("proceedError");
-          let token = firebase.auth().currentUser.getIdToken().then(function(idToken) {
-            let header = {
-                'Authorization': `${idToken}`,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-            };
-            axios({
-                method: 'post',
-                url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/section/update',
-                data: {
-                    'section_id': document.getElementById('proceedSectionId').innerHTML,
-                    'section_state': state_ReverseMapping[document.getElementById('toState').innerHTML],
-                },
-                headers: header,
-                withCredentials: false
-            }).then(function(response) {
-                $("#comfirmProceed").modal('hide')
-                refreshPage();
-            }).catch(function(error) {
-                errorText.style.display = "block";
-                console.error(error.response.data);
+        function proceedSection() {
+            let errorText = document.getElementById("proceedError");
+            let token = firebase.auth().currentUser.getIdToken().then(function(idToken) {
+                let header = {
+                    'Authorization': `${idToken}`,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json'
+                };
+                axios({
+                    method: 'post',
+                    url: 'https://asia-east2-foobar-group-delivery-app.cloudfunctions.net/api/section/update',
+                    data: {
+                        'section_id': document.getElementById('proceedSectionId').innerHTML,
+                        'section_state': state_ReverseMapping[document.getElementById('toState').innerHTML],
+                    },
+                    headers: header,
+                    withCredentials: false
+                }).then(function(response) {
+                    $("#comfirmProceed").modal('hide')
+                    refreshPage();
+                }).catch(function(error) {
+                    errorText.style.display = "block";
+                    console.error(error.response.data);
+                });
             });
-          });
         }
 
         const delivery_location = Object.freeze({
-          "atrium": {
-            "address": "Atrium, HKUST",
-            "address_zh":"中庭，香港科技大學",
-            "geopoint": new firebase.firestore.GeoPoint(22.336263, 114.263532),
-          },
+            "atrium": {
+                "address": "Atrium, HKUST",
+                "address_zh": "中庭，香港科技大學",
+                "geopoint": new firebase.firestore.GeoPoint(22.336263, 114.263532),
+            },
         });
 
         const card_color = Object.freeze({
-          '0_available': 'card-success',
-          '1_processing': 'card-info',
-          '2_preparing': 'card-warning',
-          '3_shipped': 'card-primary',
-          '4_ready_for_pick_up': 'card-secondary',
-          'not_available': 'card-danger',
+            '0_available': 'card-success',
+            '1_processing': 'card-info',
+            '2_preparing': 'card-warning',
+            '3_shipped': 'card-primary',
+            '4_ready_for_pick_up': 'card-secondary',
+            'not_available': 'card-danger',
         });
 
         const next_state = Object.freeze({
-          '0_available': '1_processing',
-          '1_processing': '2_preparing',
-          '2_preparing': '3_shipped',
+            '0_available': '1_processing',
+            '1_processing': '2_preparing',
+            '2_preparing': '3_shipped',
         });
 
         const state_mapping = Object.freeze({
-          '0_available': 'Active',
-          '1_processing': 'Processing',
-          '2_preparing': 'Preparing',
-          '3_shipped': 'Shipped',
+            '0_available': 'Active',
+            '1_processing': 'Processing',
+            '2_preparing': 'Preparing',
+            '3_shipped': 'Shipped',
         });
 
         const state_ReverseMapping = Object.freeze({
-          'Active': '0_available',
-          'Processing': '1_processing',
-          'Preparing': '2_preparing',
-          'Shipped': '3_shipped',
+            'Active': '0_available',
+            'Processing': '1_processing',
+            'Preparing': '2_preparing',
+            'Shipped': '3_shipped',
         });
 
         const state_to_badge = Object.freeze({
-          '0_available': 'badge badge-success',
-          '1_processing': 'badge badge-info',
-          '2_preparing': 'badge badge-warning',
-          '3_shipped': 'badge badge-primary',
+            '0_available': 'badge badge-success',
+            '1_processing': 'badge badge-info',
+            '2_preparing': 'badge badge-warning',
+            '3_shipped': 'badge badge-primary',
         });
 
         function initPage() {
@@ -770,59 +810,31 @@
                     <a href="index.html" class="nav-link">Home</a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
-                    <a href="#" class="nav-link">FAQ</a>
+                    <a href="" class="nav-link" id="topBarOrderLink">Orders</a>
                 </li>
                 <li class="nav-item d-none d-sm-inline-block">
-                    <a href="#" class="nav-link">Help Center</a>
+                    <a href="editRest.html" class="nav-link">Edit Restaurant</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="foodItems.html" class="nav-link">Food Items</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="menu.html" class="nav-link">Menu</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="stats.html" class="nav-link">Order History</a>
+                </li>
+                <li class="nav-item d-none d-sm-inline-block">
+                    <a href="ratings.html" class="nav-link">Ratings</a>
                 </li>
             </ul>
-
-            <!-- SEARCH FORM -->
-            <form class="form-inline ml-3">
-                <div class="input-group input-group-sm">
-                    <input class="form-control form-control-navbar" type="search" placeholder="Search items" aria-label="Search">
-                    <div class="input-group-append">
-                        <button class="btn btn-navbar" type="submit">
-              <i class="fas fa-search"></i>
-            </button>
-                    </div>
-                </div>
-            </form>
-
             <!-- Right navbar links -->
             <ul class="navbar-nav ml-auto">
-                <!-- Messages Dropdown Menu -->
-                <!-- Notifications Dropdown Menu -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link" data-toggle="dropdown" href="#">
-                        <i class="fas fa-bell"></i>
-                        <span class="badge badge-warning navbar-badge">7</span>
-                    </a>
-                    <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right">
-                        <span class="dropdown-item dropdown-header">7 Notifications</span>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-utensils mr-2"></i> 3 new orders
-                            <span class="float-right text-muted text-sm">3 mins ago</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-exclamation mr-2"></i> 1 item with empty stock
-                            <span class="float-right text-muted text-sm">1 min ago</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item">
-                            <i class="fas fa-star mr-2"></i> 3 new ratings
-                            <span class="float-right text-muted text-sm">2 days</span>
-                        </a>
-                        <div class="dropdown-divider"></div>
-                        <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
-                    </div>
-                </li>
                 <li class="nav-item">
                     <a id="logout" class="nav-link" href="#">
                         <i class="fas fa-sign-out-alt mr-2"></i> Logout
                     </a>
+                </li>
             </ul>
         </nav>
         <!-- /.navbar -->
@@ -830,20 +842,16 @@
         <!-- Main Sidebar Container -->
         <aside class="main-sidebar sidebar-dark-primary elevation-4">
             <!-- Brand Logo -->
-            <a href="index3.html" class="brand-link">
-                <img src="dist/img/AdminLTELogo.png" alt="AdminLTE Logo" class="brand-image img-circle elevation-3" style="opacity: .8">
-                <span class="brand-text font-weight-light">Foobar++</span>
+            <a href="index.html" class="brand-link">
+                <span class="brand-text font-weight-light">Foobar++ Dashboard</span>
             </a>
 
             <!-- Sidebar -->
             <div class="sidebar">
                 <!-- Sidebar user panel (optional) -->
                 <div class="user-panel mt-3 pb-3 mb-3 d-flex">
-                    <div class="image">
-                        <img src="dist/img/can.teen.jpg" class="img-circle elevation-2" alt="User Image">
-                    </div>
                     <div class="info">
-                        <a id="emailAddrSideBar" class="d-block"></a>
+                        <a id="emailAddrSideBar" href="#" class="d-block"></a>
                     </div>
                 </div>
 
@@ -862,11 +870,8 @@
                         </li>
                         <li class="nav-header">Orders</li>
                         <li class="nav-item">
-                            <a href="orders.html" class="nav-link">
-                                <i class="nav-icon fa fa-shopping-cart"></i>
-                                <p>
-                                    Active orders
-                                    <span class="badge badge-info right">1</span>
+                            <a href="orders.html" class="nav-link active" id="activeOrderLink">
+                                <i class="nav-icon fa fa-shopping-cart"></i> Active orders
                                 </p>
                             </a>
                         </li>
@@ -876,7 +881,6 @@
                                 <i class="nav-icon fas fa-edit"></i>
                                 <p>
                                     Edit restaurant details
-                                    <span class="badge badge-info right">1</span>
                                 </p>
                             </a>
                         </li>
@@ -884,27 +888,25 @@
                         <li class="nav-item">
                             <a href="foodItems.html" class="nav-link">
                                 <i class="nav-icon fas fa-hamburger"></i>
-                                <p>
+                                <p id="emptyFoodItemsBadge">
                                     Food items
-                                    <span class="right badge badge-danger">Empty stock!</span>
                                 </p>
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a href="menu.html" class="nav-link active">
+                            <a href="menu.html" class="nav-link">
                                 <i class="nav-icon fas fa-shopping-cart"></i>
                                 <p>
                                     Menu Contents
-                                    <span class="badge badge-info right">5</span>
                                 </p>
                             </a>
                         </li>
                         <li class="nav-header">Statistics</li>
                         <li class="nav-item">
-                            <a href="orders.html" class="nav-link">
-                                <i class="nav-icon fas fa-chart-pie"></i>
+                            <a href="stats.html" class="nav-link">
+                                <i class="nav-icon fa fa-shopping-cart"></i>
                                 <p>
-                                    Order statistics
+                                    Order History
                                 </p>
                             </a>
                         </li>
@@ -944,26 +946,28 @@
                                         <button type="button" class="btn btn-sm btn-block bg-gradient-success" data-toggle="modal" data-target="#editOrAddModal" onclick="prepInsert(true)">Add New Timeslot</button>
                                     </td>
                                     <td style="padding-right: 10px;">
-                                      <div class="btn-group">
-                                        <button type="button" class="btn btn-sm bg-gradient-white">State: </button>
-                                        <button type="button" class="btn btn-sm bg-gradient-success">Active</button>
-                                        <button type="button" class="btn btn-sm bg-gradient-info">Processing</button>
-                                        <button type="button" class="btn btn-sm bg-gradient-warning">Preparing</button>
-                                        <button type="button" class="btn btn-sm bg-gradient-primary">Shipped</button>
-                                      </div>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm bg-gradient-white">State: </button>
+                                            <button type="button" class="btn btn-sm bg-gradient-success">Active</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-info">Processing</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-warning">Preparing</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-primary">Shipped</button>
+                                        </div>
                                     </td>
                                     <td style="padding-right: 10px;">
-                                      <div class="btn-group">
-                                        <button type="button" class="btn btn-sm bg-gradient-white">Availability: </button>
-                                        <button type="button" class="btn btn-sm bg-gradient-success">Available</button>
-                                        <button type="button" class="btn btn-sm bg-gradient-danger">Not Available</button>
-                                      </div>
+                                        <div class="btn-group">
+                                            <button type="button" class="btn btn-sm bg-gradient-white">Availability:
+                                            </button>
+                                            <button type="button" class="btn btn-sm bg-gradient-success">Available</button>
+                                            <button type="button" class="btn btn-sm bg-gradient-danger">Not
+                                                Available</button>
+                                        </div>
                                     </td>
                                     <td>
-                                      <button class="btn btn-sm bg-gradient-white" onclick="refreshPage()">
-                                        <i class="fa fa-repeat"></i>
-                                        Refresh
-                                      </button>
+                                        <button class="btn btn-sm bg-gradient-white" onclick="refreshPage()">
+                                            <i class="fa fa-repeat"></i>
+                                            Refresh
+                                        </button>
                                     </td>
                                 </tr>
                             </table>
@@ -1005,170 +1009,177 @@
         <!-- /.control-sidebar -->
     </div>
     <div class="modal fade" id="editOrAddModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title" id="editOrAddModal_title">Timeslot</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <div class="form-group">
-              <label for="update-name">Title</label>
-              <input type="text" class="form-control" id="update-name">
-            </div>
-            <div class="form-group">
-              <label for="update-name-ch">Title (CH)</label>
-              <input type="text" class="form-control" id="update-name-ch">
-            </div>
-            <label for="update-delivery-cost">Delivery Cost</label>
-            <div class="form-group">
-              <div class="input-group">
-                <div class="input-group-prepend">
-                  <span class="input-group-text">
-                    <i class="fas fa-dollar-sign"></i>
-                  </span>
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editOrAddModal_title">Timeslot</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
                 </div>
-                <input type="number" class="form-control" id="update-delivery-cost">
-              </div>
-            </div>
-            <div class="form-group">
-              <label for="update-count">Delivery Location</label>
-                <select class="form-control" name="Location" id="update-location"><option value="atrium">Atrium, HKUST || 中庭，香港科技大學</option></select>
-            </div>
-            <div class="form-group">
-              <label for="update-delivery-time">Delivery Time</label>
-              <input type="datetime-local" class="form-control" id="update-delivery-time">
-            </div>
-            <div class="form-group">
-              <label for="update-cutofftime">Group Cut Off Time</label>
-              <input type="datetime-local" class="form-control" id="update-cutofftime">
-            </div>
-            <div class="form-group">
-              <label for="update-max-order">Max Orders</label>
-              <input type="number" class="form-control" id="update-max-order">
-            </div>
-            <div class="form-group">
-              <label for="update-descrip">Description</label>
-              <input type="text" class="form-control" id="update-descrip">
-            </div>
-            <div class="form-group">
-              <label for="update-descrip-ch">Description (CH)</label>
-              <input type="text" class="form-control" id="update-descrip-ch">
-            </div>
-            <div class="form-group">
-              <label for="exampleInputFile">Image</label>
-              <div class="input-group">
-                <div class="custom-file">
-                  <input type="file" accept="image/*" class="custom-file-input" id="update-image">
-                  <label class="custom-file-label" for="update-image">Choose file</label>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="update-name">Title</label>
+                        <input type="text" class="form-control" id="update-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-name-ch">Title (CH)</label>
+                        <input type="text" class="form-control" id="update-name-ch">
+                    </div>
+                    <label for="update-delivery-cost">Delivery Cost</label>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </span>
+                            </div>
+                            <input type="number" class="form-control" id="update-delivery-cost">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-count">Delivery Location</label>
+                        <select class="form-control" name="Location" id="update-location">
+                            <option value="atrium">Atrium, HKUST || 中庭，香港科技大學</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="update-delivery-time">Delivery Time</label>
+                        <input type="datetime-local" class="form-control" id="update-delivery-time">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-cutofftime">Group Cut Off Time</label>
+                        <input type="datetime-local" class="form-control" id="update-cutofftime">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-max-order">Max Orders</label>
+                        <input type="number" class="form-control" id="update-max-order">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-descrip">Description</label>
+                        <input type="text" class="form-control" id="update-descrip">
+                    </div>
+                    <div class="form-group">
+                        <label for="update-descrip-ch">Description (CH)</label>
+                        <input type="text" class="form-control" id="update-descrip-ch">
+                    </div>
+                    <div class="form-group">
+                        <label for="exampleInputFile">Image</label>
+                        <div class="input-group">
+                            <div class="custom-file">
+                                <input type="file" accept="image/*" class="custom-file-input" id="update-image">
+                                <label class="custom-file-label" for="update-image">Choose file</label>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
+                <div class="form-group">
+                    <label id="addItemError" style="color: red; display: none; text-align: center;">You Should Fill in
+                        All the Blanks !!</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="addOrEditItem()">Confirm</button>
+                </div>
             </div>
-          </div>
-          <div class="form-group">
-              <label id="addItemError" style="color: red; display: none; text-align: center;">You Should Fill in All the Blanks !!</label>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" onclick="addOrEditItem()">Confirm</button>
-          </div>
         </div>
-      </div>
     </div>
-        <div class="modal fade" id="comfirmProceed" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
-      <div class="modal-dialog" role="document">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Proceed to the Next Stage</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-              <span aria-hidden="true">×</span>
-            </button>
-          </div>
-          <div class="modal-body">
-            <span>Are you confirm to proceed the section to the next stage?</span>
-            <p>Section ID: </p><p id="proceedSectionId"></p>
-            <p>From: </p><p><span id="fromState"></span></p>
-            <p>To: </p><p><span id="toState"></span></p>
-          </div>
-          <div class="form-group">
-              <label id="proceedError" style="color: red; display: none; text-align: center;">Cloud Function Error.</label>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" onclick="proceedSection()">Confirm</button>
-          </div>
-      </div>
-    </div>
-    <!-- ./wrapper -->
-    <script>
-        var logoutBtn = document.getElementById('logout');
-        logoutBtn.onclick = function() {
-            firebase.auth().signOut().then(function() {
-                window.location.replace("login.html");
-            })
-        }
-    </script>
-    <script>
-        function toggleRestOnline() {
-            var db = firebase.firestore();
-            var user = firebase.auth().currentUser;
-            db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
-                queryResult.forEach(function(doc) {
-                    let currentUser = window.sellerInfo;
-                    doc_id = currentUser.obj.id;
-                    if (doc.data().online) {
-                        db.collection("sellers").doc(doc_id).update({
-                            online: false
-                        }).then(function() {
-                            $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
-                            $('#restOnline').html('Closed');
-                        });
-                    } else {
-                        db.collection("sellers").doc(doc_id).update({
-                            online: true
-                        }).then(function() {
-                            $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
-                            $('#restOnline').html('Open');
-                        });
-                    }
+    <div class="modal fade" id="comfirmProceed" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Proceed to the Next Stage</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <span>Are you confirm to proceed the section to the next stage?</span>
+                    <p>Section ID: </p>
+                    <p id="proceedSectionId"></p>
+                    <p>From: </p>
+                    <p><span id="fromState"></span></p>
+                    <p>To: </p>
+                    <p><span id="toState"></span></p>
+                </div>
+                <div class="form-group">
+                    <label id="proceedError" style="color: red; display: none; text-align: center;">Cloud Function
+                        Error.</label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="proceedSection()">Confirm</button>
+                </div>
+            </div>
+        </div>
+        <!-- ./wrapper -->
+        <script>
+            var logoutBtn = document.getElementById('logout');
+            logoutBtn.onclick = function() {
+                firebase.auth().signOut().then(function() {
+                    window.location.replace("login.html");
+                })
+            }
+        </script>
+        <script>
+            function toggleRestOnline() {
+                var db = firebase.firestore();
+                var user = firebase.auth().currentUser;
+                db.collection("sellers").where("by_user_id", "==", user.uid).get().then(function(queryResult) {
+                    queryResult.forEach(function(doc) {
+                        let currentUser = window.sellerInfo;
+                        doc_id = currentUser.obj.id;
+                        if (doc.data().online) {
+                            db.collection("sellers").doc(doc_id).update({
+                                online: false
+                            }).then(function() {
+                                $('#restOnline').removeClass("btn btn-success").addClass("btn btn-danger");
+                                $('#restOnline').html('Closed');
+                            });
+                        } else {
+                            db.collection("sellers").doc(doc_id).update({
+                                online: true
+                            }).then(function() {
+                                $('#restOnline').removeClass("btn btn-danger").addClass("btn btn-success");
+                                $('#restOnline').html('Open');
+                            });
+                        }
+                    });
                 });
-            });
-        }
-    </script>
-    <!-- jQuery -->
-    <script src="plugins/jquery/jquery.min.js"></script>
-    <!-- jQuery UI 1.11.4 -->
-    <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
-    <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
-    <script>
-        $.widget.bridge('uibutton', $.ui.button)
-    </script>
-    <!-- Bootstrap 4 -->
-    <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="plugins/bootstrap/js/bootstrap.min.js"></script>
-    <!-- JQVMap -->
-    <script src="plugins/jqvmap/jquery.vmap.min.js"></script>
-    <script src="plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
-    <!-- jQuery Knob Chart -->
-    <script src="plugins/jquery-knob/jquery.knob.min.js"></script>
-    <!-- daterangepicker -->
-    <script src="plugins/moment/moment.min.js"></script>
-    <script src="plugins/daterangepicker/daterangepicker.js"></script>
-    <!-- Tempusdominus Bootstrap 4 -->
-    <script src="plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
-    <!-- Summernote -->
-    <script src="plugins/summernote/summernote-bs4.min.js"></script>
-    <!-- overlayScrollbars -->
-    <script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
-    <!-- AdminLTE App -->
-    <script src="dist/js/adminlte.js"></script>
-    <script src="dist/js/adminlte.min.js"></script>
-    <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
-    <script src="dist/js/pages/dashboard.js"></script>
-    <!-- AdminLTE for demo purposes -->
-    <script src="dist/js/demo.js"></script>
+            }
+        </script>
+        <!-- jQuery -->
+        <script src="plugins/jquery/jquery.min.js"></script>
+        <!-- jQuery UI 1.11.4 -->
+        <script src="plugins/jquery-ui/jquery-ui.min.js"></script>
+        <!-- Resolve conflict in jQuery UI tooltip with Bootstrap tooltip -->
+        <script>
+            $.widget.bridge('uibutton', $.ui.button)
+        </script>
+        <!-- Bootstrap 4 -->
+        <script src="plugins/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="plugins/bootstrap/js/bootstrap.min.js"></script>
+        <!-- JQVMap -->
+        <script src="plugins/jqvmap/jquery.vmap.min.js"></script>
+        <script src="plugins/jqvmap/maps/jquery.vmap.usa.js"></script>
+        <!-- jQuery Knob Chart -->
+        <script src="plugins/jquery-knob/jquery.knob.min.js"></script>
+        <!-- daterangepicker -->
+        <script src="plugins/moment/moment.min.js"></script>
+        <script src="plugins/daterangepicker/daterangepicker.js"></script>
+        <!-- Tempusdominus Bootstrap 4 -->
+        <script src="plugins/tempusdominus-bootstrap-4/js/tempusdominus-bootstrap-4.min.js"></script>
+        <!-- Summernote -->
+        <script src="plugins/summernote/summernote-bs4.min.js"></script>
+        <!-- overlayScrollbars -->
+        <script src="plugins/overlayScrollbars/js/jquery.overlayScrollbars.min.js"></script>
+        <!-- AdminLTE App -->
+        <script src="dist/js/adminlte.js"></script>
+        <script src="dist/js/adminlte.min.js"></script>
+        <!-- AdminLTE dashboard demo (This is only for demo purposes) -->
+        <script src="dist/js/pages/dashboard.js"></script>
+        <!-- AdminLTE for demo purposes -->
+        <script src="dist/js/demo.js"></script>
 </body>
 
 </html>
