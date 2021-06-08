@@ -12,17 +12,6 @@ Food ordering and delivery services such as FoodPanda serve individual customers
 
 * **jQuery** - jQuery is a fast, small, and feature-rich JavaScript library. 
 
-## Usage
-1. Download the project.
-
-```console
-git clone https://github.com/foobar-UST/foobar-android.git
-```
-
-2. Compile the project with Android Studio.
-
-3. Run the app on your devices or emulators.
-
 ## Screenshots
 <div>
     <img src="./screenshots/seller_login.png" alt="drawing" width="700"/>
